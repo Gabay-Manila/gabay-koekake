@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>声かけ判断シミュレーター</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+<script src="questions.js"></script>
+<style>
+  :root {
+    --mint: #e8f7f0;
+    --mint-mid: #b2dfc8;
+    --mint-dark: #3aaa72;
+    --mint-deep: #1d7a4e;
+    --sakura: #fde8ef;
+    --sakura-mid: #f4a8c0;
+    --sakura-dark: #d64f7a;
+    --warm: #fff8ee;
+    --warm-mid: #ffd49a;
+    --warm-dark: #e07d1a;
+    --blue-light: #eaf3ff;
+    --blue-mid: #b0d0ff;
+    --blue-dark: #2d6fe0;
+    --text-main: #2c3e30;
+    --text-sub: #5a6e60;
+    --text-hint: #8fa895;
+    --bg: #f5fbf7;
+    --card: #ffffff;
+    --border: #d4eadc;
+    --shadow: 0 4px 20px rgba(58,170,114,0.10);
+    --shadow-hover: 0 8px 30px rgba(58,170,114,0.20);
+    --radius: 18px;
+    --radius-sm: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text-main);
+    min-height: 100vh;
+    padding: 0 0 80px;
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    background: linear-gradient(135deg, #1d7a4e 0%, #3aaa72 60%, #5ec490 100%);
+    padding: 28px 20px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -20px; left: 10px;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
+  .header-icon {
+    font-size: 40px;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .header h1 {
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-size: clamp(18px, 5vw, 24px);
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.04em;
+    position: relative;
+  }
+  .header p {
+    font-size: 12px;
+    color: rgba(255,255,255,0.75);
+    margin-top: 4px;
+    position: relative;
+  }
+
+  /* ===== PROGRESS ===== */
+  .progress-wrap {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .progress-label {
+    font-size: 12px;
+    color: var(--text-sub);
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  .progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--mint);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--mint-dark), #5ec490);
+    border-radius: 99px;
+    transition: width 0.5s cubic-bezier(.4,0,.2,1);
+  }
+  .score-badge {
+    background: var(--mint);
+    color: var(--mint-deep);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 99px;
+    white-space: nowrap;
+  }
+
+  /* ===== MAIN CONTENT ===== */
+  .main {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 20px 16px;
+  }
+
+  /* ===== CATEGORY BADGE ===== */
+  .category-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--blue-light);
+    color: var(--blue-dark);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 99px;
+    margin-bottom: 12px;
+    letter-spacing: 0.03em;
+  }
+
+  /* ===== SCENE CARD ===== */
+  .scene-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 20px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+  .scene-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--mint-dark);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .scene-label::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 14px;
+    background: var(--mint-dark);
+    border-radius: 2px;
+  }
+  .scene-text {
+    font-size: clamp(15px, 4vw, 17px);
+    line-height: 1.8;
+    color: var(--text-main);
+    font-weight: 500;
+  }
+  .scene-num {
+    position: absolute;
+    top: 16px; right: 18px;
+    font-size: 11px;
+    color: var(--text-hint);
+    font-weight: 400;
+  }
+
+  /* ===== SPEAK BUTTON ===== */
+  .speak-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid var(--mint-mid);
+    color: var(--mint-deep);
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 99px;
+    cursor: pointer;
+    margin-top: 12px;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .speak-btn:hover { background: var(--mint); border-color: var(--mint-dark); }
+  .speak-btn.speaking { background: var(--mint); animation: pulse-border 1s infinite; }
+  @keyframes pulse-border {
+    0%,100% { border-color: var(--mint-mid); }
+    50% { border-color: var(--mint-dark); }
+  }
+
+  /* ===== CHOICES ===== */
+  .choices-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-sub);
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .choices-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .choice-btn {
+    width: 100%;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px 18px;
+    text-align: left;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: clamp(13px, 3.5vw, 15px);
+    line-height: 1.7;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(.4,0,.2,1);
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .choice-btn:hover:not(:disabled) {
+    border-color: var(--mint-dark);
+    background: var(--mint);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+  }
+  .choice-btn:active:not(:disabled) { transform: translateY(0); }
+  .choice-btn:disabled { cursor: default; }
+
+  .choice-letter {
+    min-width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--mint);
+    color: var(--mint-deep);
+    font-size: 12px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+    transition: all 0.2s;
+  }
+  .choice-text { flex: 1; }
+
+  /* ===== RESULT STATES ===== */
+  .choice-btn.correct {
+    border-color: var(--mint-dark);
+    background: var(--mint);
+    animation: pop-correct 0.4s cubic-bezier(.4,0,.2,1);
+  }
+  .choice-btn.correct .choice-letter {
+    background: var(--mint-dark);
+    color: #fff;
+  }
+  .choice-btn.wrong {
+    border-color: var(--sakura-dark);
+    background: var(--sakura);
+  }
+  .choice-btn.wrong .choice-letter {
+    background: var(--sakura-dark);
+    color: #fff;
+  }
+  .choice-btn.show-correct {
+    border-color: var(--mint-dark);
+    background: var(--mint);
+    opacity: 0.85;
+  }
+  .choice-btn.show-correct .choice-letter {
+    background: var(--mint-dark);
+    color: #fff;
+  }
+
+  @keyframes pop-correct {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.03); }
+    100% { transform: scale(1); }
+  }
+
+  /* ===== FEEDBACK ===== */
+  .feedback-box {
+    border-radius: var(--radius-sm);
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    display: none;
+    animation: slide-up 0.3s ease;
+  }
+  .feedback-box.show { display: block; }
+  .feedback-box.correct-fb {
+    background: var(--mint);
+    border: 1.5px solid var(--mint-mid);
+  }
+  .feedback-box.wrong-fb {
+    background: var(--sakura);
+    border: 1.5px solid var(--sakura-mid);
+  }
+  .feedback-head {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .feedback-head.correct-head { color: var(--mint-deep); }
+  .feedback-head.wrong-head { color: var(--sakura-dark); }
+  .feedback-hint {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text-sub);
+  }
+
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ===== NEXT BUTTON ===== */
+  .next-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--mint-dark), #5ec490);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(58,170,114,0.35);
+    letter-spacing: 0.04em;
+  }
+  .next-btn.show { display: flex; }
+  .next-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(58,170,114,0.45); }
+  .next-btn:active { transform: translateY(0); }
+
+  /* ===== RESULT SCREEN ===== */
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 30px 10px;
+    animation: slide-up 0.5s ease;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 72px; margin-bottom: 16px; }
+  .result-title {
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--mint-deep);
+    margin-bottom: 8px;
+  }
+  .result-score {
+    font-size: 52px;
+    font-weight: 700;
+    color: var(--mint-dark);
+    line-height: 1.1;
+    margin: 16px 0 4px;
+  }
+  .result-denom { font-size: 20px; color: var(--text-sub); }
+  .result-message {
+    font-size: 15px;
+    color: var(--text-sub);
+    margin: 16px 0 30px;
+    line-height: 1.8;
+  }
+  .stars { font-size: 32px; margin: 8px 0; }
+
+  .result-detail {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin: 20px 0;
+    text-align: left;
+  }
+  .result-detail-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-sub);
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+  }
+  .wrong-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .wrong-item:last-child { border-bottom: none; }
+  .wrong-q { color: var(--text-sub); }
+  .wrong-a { color: var(--mint-deep); font-weight: 500; }
+
+  .retry-btn {
+    background: linear-gradient(135deg, var(--mint-dark), #5ec490);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 16px 40px;
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(58,170,114,0.35);
+    transition: all 0.2s;
+  }
+  .retry-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(58,170,114,0.45); }
+
+  /* ===== QUESTION SCREEN CONTAINER ===== */
+  #quiz-screen { display: block; }
+
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="header-icon">🌸</span>
+  <h1>声かけ判断シミュレーター</h1>
+  <p>介護現場の声かけ力を磨こう</p>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-label" id="q-label">問題 1 / 20</div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  <div class="score-badge" id="score-badge">✨ 0 / 0</div>
+</div>
+
+<div class="main">
+
+  <!-- QUIZ SCREEN -->
+  <div id="quiz-screen">
+    <div class="category-badge" id="cat-badge">🏷️ カテゴリー</div>
+
+    <div class="scene-card">
+      <div class="scene-num" id="scene-num">Q1</div>
+      <div class="scene-label">場面</div>
+      <div class="scene-text" id="scene-text">...</div>
+      <button class="speak-btn" id="speak-btn" onclick="speakScene()">
+        🔊 <span id="speak-label">読み上げる</span>
+      </button>
+    </div>
+
+    <div class="choices-label">📝 正しい声かけはどれですか？</div>
+    <div class="choices-wrap" id="choices-wrap"></div>
+
+    <div class="feedback-box" id="feedback-box">
+      <div class="feedback-head" id="feedback-head"></div>
+      <div class="feedback-hint" id="feedback-hint"></div>
+    </div>
+
+    <button class="next-btn" id="next-btn" onclick="nextQuestion()">
+      次の問題へ ▶
+    </button>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div id="result-screen" class="result-screen">
+    <div class="result-icon" id="result-icon">🎉</div>
+    <div class="result-title">お疲れさまでした！</div>
+    <div class="stars" id="stars"></div>
+    <div class="result-score" id="result-score">0</div>
+    <div class="result-denom">/ 20問正解</div>
+    <div class="result-message" id="result-message"></div>
+
+    <div class="result-detail" id="wrong-list-wrap" style="display:none">
+      <div class="result-detail-title">✏️ 間違えた問題の正解</div>
+      <div id="wrong-list"></div>
+    </div>
+
+    <button class="retry-btn" onclick="restart()">🔄 もう一度チャレンジ</button>
+  </div>
+
+</div>
+
+<script>
+let shuffled = [];
+let current = 0;
+let score = 0;
+let answered = 0;
+let wrongItems = [];
+let speaking = false;
+
+const letters = ['Ａ', 'Ｂ', 'Ｃ'];
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function init() {
+  shuffled = shuffle(questions);
+  current = 0;
+  score = 0;
+  answered = 0;
+  wrongItems = [];
+  document.getElementById('quiz-screen').style.display = 'block';
+  document.getElementById('result-screen').classList.remove('show');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = shuffled[current];
+  const choices = shuffle([q.correct, q.wrong1, q.wrong2]);
+
+  document.getElementById('q-label').textContent = `問題 ${current + 1} / ${shuffled.length}`;
+  document.getElementById('scene-num').textContent = `Q${current + 1}`;
+  document.getElementById('scene-text').textContent = q.scene;
+  document.getElementById('cat-badge').innerHTML = `🏷️ ${q.category}`;
+
+  const fillPct = (current / shuffled.length) * 100;
+  document.getElementById('progress-fill').style.width = fillPct + '%';
+  document.getElementById('score-badge').textContent = `✨ ${score} / ${answered}`;
+
+  const wrap = document.getElementById('choices-wrap');
+  wrap.innerHTML = '';
+  choices.forEach((text, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.innerHTML = `<span class="choice-letter">${letters[i]}</span><span class="choice-text">${text}</span>`;
+    btn.onclick = () => choose(btn, text, q, choices);
+    wrap.appendChild(btn);
+  });
+
+  document.getElementById('feedback-box').className = 'feedback-box';
+  document.getElementById('next-btn').className = 'next-btn';
+  document.getElementById('speak-btn').className = 'speak-btn';
+  document.getElementById('speak-label').textContent = '読み上げる';
+}
+
+function choose(btn, selected, q, choices) {
+  const btns = document.querySelectorAll('.choice-btn');
+  btns.forEach(b => b.disabled = true);
+
+  const isCorrect = selected === q.correct;
+  answered++;
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    score++;
+    showFeedback(true, q.hint);
+    speak(`正解です！${q.hint}`);
+  } else {
+    btn.classList.add('wrong');
+    btns.forEach(b => {
+      if (b.querySelector('.choice-text').textContent === q.correct) {
+        b.classList.add('show-correct');
+      }
+    });
+    showFeedback(false, `正解：${q.correct}\n${q.hint}`);
+    speak(`残念。正解は：${q.correct}`);
+    wrongItems.push({ scene: q.scene, correct: q.correct });
+  }
+
+  document.getElementById('score-badge').textContent = `✨ ${score} / ${answered}`;
+  document.getElementById('next-btn').className = 'next-btn show';
+}
+
+function showFeedback(correct, msg) {
+  const box = document.getElementById('feedback-box');
+  const head = document.getElementById('feedback-head');
+  const hint = document.getElementById('feedback-hint');
+  box.className = 'feedback-box show ' + (correct ? 'correct-fb' : 'wrong-fb');
+  head.className = 'feedback-head ' + (correct ? 'correct-head' : 'wrong-head');
+  head.textContent = correct ? '✅ 正解！すばらしい！' : '❌ 惜しい！';
+  hint.textContent = msg;
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= shuffled.length) {
+    showResult();
+  } else {
+    renderQuestion();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function showResult() {
+  document.getElementById('quiz-screen').style.display = 'none';
+  const rs = document.getElementById('result-screen');
+  rs.classList.add('show');
+
+  const pct = score / shuffled.length;
+  document.getElementById('result-score').textContent = score;
+  document.getElementById('progress-fill').style.width = '100%';
+
+  let stars = '', icon = '', msg = '';
+  if (pct >= 0.9) {
+    stars = '⭐⭐⭐'; icon = '🏆';
+    msg = '完璧です！現場でも自信を持って声かけできますね。';
+  } else if (pct >= 0.7) {
+    stars = '⭐⭐'; icon = '😊';
+    msg = 'よくできました！あと少しで完璧です。間違えた問題を確認しましょう。';
+  } else if (pct >= 0.5) {
+    stars = '⭐'; icon = '💪';
+    msg = '半分以上正解！苦手な場面を中心に練習しましょう。';
+  } else {
+    stars = '🌱'; icon = '📖';
+    msg = 'もう一度チャレンジ！声かけの基本を一緒に覚えていきましょう。';
+  }
+
+  document.getElementById('stars').textContent = stars;
+  document.getElementById('result-icon').textContent = icon;
+  document.getElementById('result-message').textContent = msg;
+
+  if (wrongItems.length > 0) {
+    const wrap = document.getElementById('wrong-list-wrap');
+    wrap.style.display = 'block';
+    const list = document.getElementById('wrong-list');
+    list.innerHTML = wrongItems.map(w =>
+      `<div class="wrong-item">
+        <div>
+          <div class="wrong-q">場面：${w.scene}</div>
+          <div class="wrong-a">✅ ${w.correct}</div>
+        </div>
+      </div>`
+    ).join('');
+  }
+
+  speak(`お疲れさまでした。${score}問正解です。${msg}`);
+}
+
+function restart() {
+  init();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ===== Web Speech API =====
+let utterance = null;
+
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'ja-JP';
+  utterance.rate = 0.95;
+  utterance.pitch = 1.05;
+  window.speechSynthesis.speak(utterance);
+}
+
+function speakScene() {
+  const q = shuffled[current];
+  const btn = document.getElementById('speak-btn');
+  const lbl = document.getElementById('speak-label');
+  if (speaking) {
+    window.speechSynthesis.cancel();
+    speaking = false;
+    btn.className = 'speak-btn';
+    lbl.textContent = '読み上げる';
+    return;
+  }
+  speak(q.scene);
+  speaking = true;
+  btn.className = 'speak-btn speaking';
+  lbl.textContent = '停止する';
+  utterance.onend = () => {
+    speaking = false;
+    btn.className = 'speak-btn';
+    lbl.textContent = '読み上げる';
+  };
+}
+
+init();
+</script>
+</body>
+</html>
