@@ -201,6 +201,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   </div>
 </div>
 
+<footer style="text-align:center;padding:24px 16px 32px;font-size:11px;color:#8fa895;letter-spacing:0.06em;">
+  © Yoshida EdTech Works. All rights reserved.
+</footer>
+
 <script>
 const BLOCKS = [
   {id:0,emoji:'🙏',name:'グループ１：基本の声かけ・お礼・謝るとき',sub:'挨拶・依頼への対応・感謝・謝罪（10問）',ids:[1,2,3,4,5,6,7,8,9,10]},
@@ -310,6 +314,7 @@ function choose(btn, selected, q) {
     });
     showFeedback(false, q);
     setTimeout(() => speakText('惜しい。正しい声かけは。' + q.correct + '。' + q.hint), 400);
+    wrongItems.push(q);
   }
   document.getElementById('score-badge').textContent = '✨ '+score+' / '+answered;
   document.getElementById('next-btn').className = 'next-btn show';
