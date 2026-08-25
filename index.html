@@ -462,6 +462,12 @@
       <p>段階ヒントで反射を鍛えるノック ＆ 状況判断シミュレーター</p>
     </div>
 
+    <div class="hero" id="resume-banner" style="display:none; cursor:pointer; position:relative; border-color: var(--accent-fill); background: #FFF6F7;" onclick="resumeSession()">
+      <button onclick="dismissResume(event)" style="position:absolute; top:10px; right:12px; background:none; border:none; color:var(--stone); font-size:1.1rem; line-height:1; cursor:pointer;">✕</button>
+      <h1 style="color: var(--accent-text); font-size: 1.05rem;">▶ 前回の続きから再開する</h1>
+      <p id="resume-detail" style="margin-top:6px;"></p>
+    </div>
+
     <div class="section-label">📌 カテゴリ選択（ブロック）</div>
     <div class="filter-wrap" id="category-filters">
       <button class="filter-chip active" onclick="setCategory('ALL')">全問題（統合版）</button>
@@ -744,6 +750,81 @@
   let knockStep = 0;
   let quizScore = 0;
   let knockRepeatQueue = [];
+  let currentMode = null; // 'knock' | 'quiz'
+  const STORAGE_KEY = 'koekake_progress_v1';
+
+  /* --- Resume Progress (localStorage) --- */
+  function saveProgress() {
+    try {
+      const data = {
+        mode: currentMode,
+        category: currentCategory,
+        index: currentIndex,
+        score: quizScore,
+        repeatIds: knockRepeatQueue.map(it => it.id),
+        total: activeList.length,
+        ts: Date.now()
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {}
+  }
+
+  function loadProgress() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+
+  function clearProgress() {
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    hideResumeBanner();
+  }
+
+  function hideResumeBanner() {
+    const el = document.getElementById('resume-banner');
+    if (el) el.style.display = 'none';
+  }
+
+  function checkResumeOnLoad() {
+    const p = loadProgress();
+    if (!p || !p.mode || p.index === undefined || p.index >= p.total) { hideResumeBanner(); return; }
+    const banner = document.getElementById('resume-banner');
+    const detail = document.getElementById('resume-detail');
+    if (!banner) return;
+    const modeLabel = p.mode === 'knock' ? '⚡ 声かけ反射ノック' : '📝 状況判断シミュレーター';
+    const catLabel = p.category === 'ALL' ? '全問題（統合版）' : p.category;
+    detail.innerText = `${modeLabel}・${catLabel}／第${p.index + 1}問から（${p.index}/${p.total}問完了）`;
+    banner.style.display = 'block';
+  }
+
+  function resumeSession() {
+    playClick();
+    const p = loadProgress();
+    if (!p) return;
+    currentCategory = p.category;
+    document.querySelectorAll('.filter-chip').forEach(b => {
+      b.classList.toggle('active', b.innerText.includes(p.category) || (p.category === 'ALL' && b.innerText.includes('全問題')));
+    });
+    currentMode = p.mode;
+    activeList = getFilteredItems();
+    currentIndex = Math.min(p.index, Math.max(activeList.length - 1, 0));
+    quizScore = p.score || 0;
+    knockRepeatQueue = (p.repeatIds || []).map(id => items.find(it => it.id === id)).filter(Boolean);
+
+    if (p.mode === 'knock') {
+      setView('view-knock');
+      renderKnockCard();
+    } else {
+      setView('view-quiz');
+      renderQuizCard();
+    }
+  }
+
+  function dismissResume(event) {
+    event.stopPropagation();
+    clearProgress();
+  }
 
   function setView(viewId) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -755,6 +836,7 @@
     playClick();
     stopSpeech();
     setView('view-home');
+    checkResumeOnLoad();
   }
 
   function setLang(lang) {
@@ -801,9 +883,11 @@
   /* --- Mode 1: Active Recall Knock --- */
   function startKnock() {
     playClick();
+    currentMode = 'knock';
     activeList = getFilteredItems();
     currentIndex = 0;
     knockRepeatQueue = [];
+    clearProgress();
     setView('view-knock');
     renderKnockCard();
   }
@@ -833,6 +917,7 @@
     document.getElementById('knock-progress').style.width = `${pct}%`;
     document.getElementById('knock-count').innerText = `${currentIndex + 1}/${activeList.length}`;
 
+    saveProgress();
     setTimeout(() => toggleKnockSpeech(), 450);
   }
 
@@ -871,9 +956,11 @@
   /* --- Mode 2: Simulator Quiz --- */
   function startQuiz() {
     playClick();
+    currentMode = 'quiz';
     activeList = getFilteredItems();
     currentIndex = 0;
     quizScore = 0;
+    clearProgress();
     setView('view-quiz');
     renderQuizCard();
   }
@@ -903,6 +990,7 @@
       optContainer.appendChild(btn);
     });
 
+    saveProgress();
     setTimeout(() => toggleQuizSpeech(), 450);
   }
 
@@ -950,6 +1038,7 @@
   /* --- Result View --- */
   function showResult(score, total) {
     stopSpeech();
+    clearProgress();
     setView('view-result');
     document.getElementById('result-score').innerText = `${score} / ${total}`;
     document.getElementById('result-msg').innerText = 
@@ -957,6 +1046,9 @@
         ? "完璧です！現場でも自信を持って声に出してみましょう。" 
         : "お疲れ様でした！間違えた問題やあやふやな声かけをノックモードで繰り返し復習しましょう。";
   }
+
+  /* --- Bootstrap --- */
+  checkResumeOnLoad();
 </script>
 </body>
 </html>
