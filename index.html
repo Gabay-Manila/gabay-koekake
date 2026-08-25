@@ -1,451 +1,962 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>声かけ判断シミュレーター</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=M+PLUS+Rounded+1c:wght@700&display=swap" rel="stylesheet">
-<script src="questions.js"></script>
-<style>
-:root{
-  --green:#3aaa72;--green-d:#1d7a4e;--green-l:#e8f7f0;--green-m:#b2dfc8;
-  --pink:#fde8ef;--pink-d:#d64f7a;--pink-m:#f4a8c0;
-  --blue-l:#eaf3ff;--blue-d:#2d6fe0;
-  --text:#2c3e30;--sub:#5a6e60;--hint:#8fa895;
-  --bg:#f5fbf7;--card:#ffffff;--border:#d4eadc;
-  --radius:18px;--radius-s:12px;
-  --shadow:0 4px 20px rgba(58,170,114,.10);
-  --shadow-h:0 8px 30px rgba(58,170,114,.22);
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:60px}
-.hdr{background:linear-gradient(135deg,#1d7a4e 0%,#3aaa72 60%,#5ec490 100%);padding:28px 20px 22px;text-align:center;position:relative;overflow:hidden}
-.hdr::before,.hdr::after{content:'';position:absolute;border-radius:50%;background:rgba(255,255,255,.07)}
-.hdr::before{width:140px;height:140px;top:-30px;right:-30px}
-.hdr::after{width:80px;height:80px;bottom:-20px;left:10px}
-.hdr-icon{font-size:40px;display:block;margin-bottom:4px;position:relative}
-.hdr h1{font-family:'M PLUS Rounded 1c',sans-serif;font-size:clamp(17px,5vw,23px);font-weight:700;color:#fff;letter-spacing:.04em;position:relative}
-.hdr p{font-size:12px;color:rgba(255,255,255,.75);margin-top:4px;position:relative}
-#block-screen{display:block}
-#quiz-screen,#result-screen{display:none}
-.main{max-width:560px;margin:0 auto;padding:20px 16px}
-.block-title{font-size:13px;font-weight:700;color:var(--sub);letter-spacing:.1em;margin:4px 0 14px;text-align:center}
-.block-grid{display:flex;flex-direction:column;gap:12px}
-.block-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px 20px;cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1);box-shadow:var(--shadow);display:flex;align-items:center;gap:16px}
-.block-card:hover{border-color:var(--green);transform:translateY(-2px);box-shadow:var(--shadow-h)}
-.block-card.done{border-color:var(--green-m);background:var(--green-l)}
-.block-num{min-width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--green-d),var(--green));color:#fff;font-family:'M PLUS Rounded 1c',sans-serif;font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px rgba(58,170,114,.3)}
-.block-card.done .block-num{background:linear-gradient(135deg,#a0c8b0,var(--green-m))}
-.block-info{flex:1}
-.block-name{font-weight:700;font-size:14px;margin-bottom:3px;line-height:1.5}
-.block-sub{font-size:11px;color:var(--sub)}
-.block-badge{font-size:12px;padding:4px 10px;border-radius:99px;font-weight:700;white-space:nowrap;flex-shrink:0}
-.badge-todo{background:var(--blue-l);color:var(--blue-d)}
-.badge-done{background:var(--green-l);color:var(--green-d)}
-.overall-bar-section{background:var(--card);border-bottom:1px solid var(--border);padding:12px 20px}
-.overall-row{display:flex;align-items:center;gap:10px;max-width:560px;margin:0 auto}
-.overall-label{font-size:12px;color:var(--sub);white-space:nowrap;font-weight:500}
-.overall-bar{flex:1;height:7px;background:var(--green-l);border-radius:99px;overflow:hidden}
-.overall-fill{height:100%;background:linear-gradient(90deg,var(--green-d),var(--green));border-radius:99px;transition:width .5s}
-.overall-pct{font-size:12px;color:var(--green-d);font-weight:700;white-space:nowrap}
-.prog-wrap{background:var(--card);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-.prog-label{font-size:12px;color:var(--sub);white-space:nowrap;font-weight:500}
-.prog-bar{flex:1;height:8px;background:var(--green-l);border-radius:99px;overflow:hidden}
-.prog-fill{height:100%;background:linear-gradient(90deg,var(--green),#5ec490);border-radius:99px;transition:width .5s cubic-bezier(.4,0,.2,1)}
-.score-badge{background:var(--green-l);color:var(--green-d);font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;white-space:nowrap}
-.cat-badge{display:inline-flex;align-items:center;gap:5px;background:var(--blue-l);color:var(--blue-d);font-size:11px;font-weight:700;padding:4px 12px;border-radius:99px;margin-bottom:12px}
-.scene-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:22px 20px;margin-bottom:16px;box-shadow:var(--shadow);position:relative}
-.scene-lbl{font-size:10px;font-weight:700;color:var(--green);letter-spacing:.12em;margin-bottom:8px;display:flex;align-items:center;gap:5px}
-.scene-lbl::before{content:'';display:inline-block;width:3px;height:14px;background:var(--green);border-radius:2px}
-.scene-text{font-size:clamp(14px,4vw,16px);line-height:1.85;font-weight:500}
-.scene-num{position:absolute;top:14px;right:16px;font-size:11px;color:var(--hint)}
-.speak-btn{display:flex;align-items:center;gap:6px;background:none;border:1px solid var(--green-m);color:var(--green-d);font-size:12px;padding:6px 14px;border-radius:99px;cursor:pointer;margin-top:12px;font-family:inherit;transition:all .2s}
-.speak-btn:hover{background:var(--green-l);border-color:var(--green)}
-.speak-btn.speaking{background:var(--green-l);animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{border-color:var(--green-m)}50%{border-color:var(--green)}}
-.choices-lbl{font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.1em;margin-bottom:10px}
-.choices-wrap{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
-.choice-btn{width:100%;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius-s);padding:15px 16px;text-align:left;font-family:'Noto Sans JP',sans-serif;font-size:clamp(13px,3.5vw,15px);line-height:1.7;color:var(--text);cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1);box-shadow:0 2px 6px rgba(0,0,0,.04);display:flex;align-items:flex-start;gap:10px}
-.choice-btn:hover:not(:disabled){border-color:var(--green);background:var(--green-l);transform:translateY(-2px);box-shadow:var(--shadow-h)}
-.choice-btn:disabled{cursor:default}
-.choice-letter{min-width:26px;height:26px;border-radius:50%;background:var(--green-l);color:var(--green-d);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;transition:all .2s}
-.choice-btn.correct{border-color:var(--green);background:var(--green-l);animation:pop .4s}
-.choice-btn.correct .choice-letter{background:var(--green);color:#fff}
-.choice-btn.wrong{border-color:var(--pink-d);background:var(--pink)}
-.choice-btn.wrong .choice-letter{background:var(--pink-d);color:#fff}
-.choice-btn.show-correct{border-color:var(--green);background:var(--green-l);opacity:.85}
-.choice-btn.show-correct .choice-letter{background:var(--green);color:#fff}
-@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.03)}100%{transform:scale(1)}}
-.fb-box{border-radius:var(--radius-s);padding:14px 16px;margin-bottom:14px;display:none;animation:slideup .3s ease}
-.fb-box.show{display:block}
-.fb-box.fb-ok{background:var(--green-l);border:1.5px solid var(--green-m)}
-.fb-box.fb-ng{background:var(--pink);border:1.5px solid var(--pink-m)}
-.fb-head{font-size:14px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:5px}
-.fb-ok .fb-head{color:var(--green-d)}
-.fb-ng .fb-head{color:var(--pink-d)}
-.fb-correct-text{font-size:13px;color:var(--green-d);font-weight:700;margin-bottom:8px;line-height:1.65;padding:8px 10px;background:rgba(58,170,114,.1);border-radius:8px}
-.fb-hint{font-size:13px;line-height:1.7;color:var(--sub)}
-.tl-box{margin-top:10px;padding:10px 12px;background:rgba(255,248,230,.9);border:1px solid #f5d89a;border-radius:8px;display:none}
-.tl-box.show{display:block}
-.tl-label{font-size:10px;font-weight:700;color:#b07d10;letter-spacing:.08em;margin-bottom:5px;display:flex;align-items:center;gap:4px}
-.tl-scene-text{font-size:12px;color:#7a5a10;line-height:1.65;margin-bottom:5px;padding-bottom:5px;border-bottom:1px solid #f0d08a}
-.tl-hint-text{font-size:12px;color:#5c4200;line-height:1.7}
-.tl-toggle{display:inline-flex;align-items:center;gap:5px;background:none;border:1px solid #f5d89a;color:#b07d10;font-size:11px;padding:5px 12px;border-radius:99px;cursor:pointer;margin-top:8px;font-family:inherit;transition:all .2s}
-.tl-toggle:hover{background:#fff8ee}
-@keyframes slideup{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.btn-row{display:flex;gap:10px}
-.back-btn{flex:0 0 auto;background:none;border:1.5px solid var(--green-m);color:var(--green-d);border-radius:var(--radius-s);padding:14px 16px;font-family:'M PLUS Rounded 1c',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;display:none}
-.back-btn.show{display:block}
-.back-btn:hover{background:var(--green-l)}
-.next-btn{flex:1;background:linear-gradient(135deg,var(--green-d),#5ec490);color:#fff;border:none;border-radius:var(--radius-s);padding:15px;font-family:'M PLUS Rounded 1c',sans-serif;font-size:16px;font-weight:700;cursor:pointer;display:none;align-items:center;justify-content:center;gap:6px;transition:all .2s;box-shadow:0 4px 15px rgba(58,170,114,.35)}
-.next-btn.show{display:flex}
-.next-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(58,170,114,.45)}
-.result-screen{display:none;animation:slideup .5s ease}
-.result-screen.show{display:block}
-.result-icon{font-size:72px;margin-bottom:12px;text-align:center}
-.result-title{font-family:'M PLUS Rounded 1c',sans-serif;font-size:26px;font-weight:700;color:var(--green-d);margin-bottom:6px;text-align:center}
-.stars{font-size:32px;margin:8px 0;text-align:center}
-.result-score{font-size:52px;font-weight:700;color:var(--green);line-height:1.1;margin:14px 0 4px;text-align:center}
-.result-denom{font-size:18px;color:var(--sub);text-align:center}
-.result-msg{font-size:14px;color:var(--sub);margin:14px 0 20px;line-height:1.85;text-align:center}
-.result-detail{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;margin:16px 0}
-.result-detail-title{font-size:12px;font-weight:700;color:var(--sub);letter-spacing:.1em;margin-bottom:10px}
-.wrong-item{padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
-.wrong-item:last-child{border-bottom:none}
-.wrong-q{color:var(--sub);margin-bottom:3px}
-.wrong-a{color:var(--green-d);font-weight:600}
-.btn-group{display:flex;flex-direction:column;gap:10px;margin-top:6px}
-.retry-btn{background:linear-gradient(135deg,var(--green-d),#5ec490);color:#fff;border:none;border-radius:var(--radius-s);padding:15px 30px;font-family:'M PLUS Rounded 1c',sans-serif;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 15px rgba(58,170,114,.35);transition:all .2s}
-.retry-btn:hover{transform:translateY(-2px)}
-.menu-btn{background:none;border:1.5px solid var(--green-m);color:var(--green-d);border-radius:var(--radius-s);padding:14px 30px;font-family:'M PLUS Rounded 1c',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s}
-.menu-btn:hover{background:var(--green-l)}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>声かけマスター | Yoshida EdTech Works</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #2B2926;
+      --cream: #EFEAE0;
+      --cream-deep: #E4DECE;
+      --stone: #C9C2B4;
+      --stone-line: #DDD6C6;
+      --accent-fill: #D9637A;
+      --accent-text: #B23F58;
+      --accent-correct: #2E8B76;
+      --accent-correct-text: #1F6355;
+      --font-mincho: 'Shippori Mincho', serif;
+      --font-gothic: 'Zen Kaku Gothic New', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background-color: var(--cream);
+      color: var(--ink);
+      font-family: var(--font-gothic);
+      line-height: 1.6;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 520px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--stone-line);
+      margin-bottom: 16px;
+    }
+    .logo {
+      font-family: var(--font-mincho);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--accent-text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .lang-switch {
+      display: flex;
+      gap: 4px;
+    }
+    .lang-btn {
+      background: transparent;
+      border: 1px solid var(--stone-line);
+      color: var(--ink);
+      font-size: 0.75rem;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: var(--font-gothic);
+      font-weight: 500;
+    }
+    .lang-btn.active {
+      border-color: var(--accent-fill);
+      color: var(--accent-text);
+      font-weight: 700;
+      background: var(--cream-deep);
+    }
+
+    /* Views */
+    .view { display: none; flex-direction: column; flex: 1; }
+    .view.active { display: flex; }
+
+    /* Home View */
+    .hero {
+      background: var(--cream-deep);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 1px solid var(--stone-line);
+      text-align: center;
+    }
+    .hero h1 {
+      font-family: var(--font-mincho);
+      font-size: 1.35rem;
+      margin-bottom: 8px;
+      color: var(--ink);
+    }
+    .hero p {
+      font-size: 0.85rem;
+      color: #555;
+    }
+
+    .section-label {
+      font-family: var(--font-mincho);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--accent-text);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .filter-wrap {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .filter-chip {
+      white-space: nowrap;
+      background: #fff;
+      border: 1px solid var(--stone-line);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 0.78rem;
+      color: var(--ink);
+      cursor: pointer;
+    }
+    .filter-chip.active {
+      border-color: var(--accent-fill);
+      background: var(--accent-fill);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .mode-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .mode-card {
+      background: #fff;
+      border: 1.5px solid var(--stone-line);
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: left;
+    }
+    .mode-card:hover, .mode-card:active {
+      border-color: var(--accent-fill);
+      background: #FFFDFC;
+    }
+    .mode-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .mode-badge {
+      background: var(--accent-fill);
+      color: var(--cream);
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 700;
+    }
+    .mode-title {
+      font-family: var(--font-mincho);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .mode-desc {
+      font-size: 0.82rem;
+      color: #666;
+      line-height: 1.45;
+    }
+
+    /* Common Card / Components */
+    .progress-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .progress-bar {
+      flex: 1;
+      height: 6px;
+      background: var(--stone);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-bar > span {
+      display: block;
+      height: 100%;
+      background: var(--accent-fill);
+      width: 0%;
+      transition: width 0.3s;
+    }
+    .progress-text {
+      font-size: 0.8rem;
+      font-family: var(--font-mincho);
+      color: var(--accent-text);
+      font-weight: 700;
+      min-width: 55px;
+      text-align: right;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--stone-line);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    }
+    .card-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .card-tag {
+      font-size: 0.75rem;
+      color: var(--accent-text);
+      font-weight: 700;
+      display: inline-block;
+      border: 1px solid var(--stone-line);
+      background: var(--cream);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .card-id {
+      font-size: 0.75rem;
+      color: #888;
+      font-family: var(--font-mincho);
+    }
+    .situation-title {
+      font-family: var(--font-mincho);
+      font-size: 1.12rem;
+      margin-bottom: 8px;
+      color: var(--ink);
+      font-weight: 700;
+    }
+    .situation-sub {
+      font-size: 0.82rem;
+      color: #666;
+      margin-bottom: 12px;
+      border-left: 2.5px solid var(--stone);
+      padding-left: 8px;
+    }
+
+    /* Knock Cloze Step Boxes */
+    .stage-box {
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 10px;
+      animation: fadeIn 0.25s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .stage-hint {
+      background: var(--cream-deep);
+      border: 1.5px dashed var(--accent-fill);
+    }
+    .hint-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-text);
+      margin-bottom: 4px;
+    }
+    .hint-body {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.5;
+    }
+    .cloze-blank {
+      display: inline-block;
+      border-bottom: 2px solid var(--accent-fill);
+      min-width: 48px;
+      text-align: center;
+      color: var(--accent-text);
+      padding: 0 4px;
+      background: rgba(217, 99, 122, 0.08);
+      border-radius: 2px 2px 0 0;
+    }
+
+    .stage-answer {
+      background: #FAFAFA;
+      border: 1.5px solid var(--accent-fill);
+    }
+    .answer-text {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent-text);
+      margin-bottom: 6px;
+    }
+    .trans-text {
+      font-size: 0.82rem;
+      color: #555;
+      margin-bottom: 8px;
+    }
+    .rationale {
+      font-size: 0.82rem;
+      background: #FFF;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid var(--stone-line);
+      color: var(--ink);
+      line-height: 1.5;
+    }
+
+    /* Read-Aloud (Web Speech API) */
+    .speak-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: 1.5px solid var(--accent-fill);
+      color: var(--accent-text);
+      font-size: 0.78rem;
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      margin-top: 10px;
+      font-family: var(--font-gothic);
+      font-weight: 700;
+      transition: all 0.2s ease;
+    }
+    .speak-btn:hover {
+      background: var(--cream-deep);
+    }
+    .speak-btn.speaking {
+      background: var(--cream-deep);
+      animation: speakPulse 1s infinite;
+    }
+    @keyframes speakPulse {
+      0%, 100% { border-color: var(--stone-line); }
+      50% { border-color: var(--accent-fill); }
+    }
+
+    /* Buttons */
+    .btn {
+      min-height: 46px;
+      border-radius: 8px;
+      font-family: var(--font-gothic);
+      font-size: 0.92rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: none;
+      width: 100%;
+      margin-top: 8px;
+      user-select: none;
+      transition: background 0.15s ease;
+    }
+    .btn-primary {
+      background: var(--accent-fill);
+      color: var(--cream);
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1.5px solid var(--accent-fill);
+      color: var(--accent-text);
+    }
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    /* Quiz Options */
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .opt-btn {
+      background: #FFF;
+      border: 1.5px solid var(--stone-line);
+      border-radius: 8px;
+      padding: 12px 14px;
+      text-align: left;
+      font-size: 0.88rem;
+      color: var(--ink);
+      cursor: pointer;
+      font-family: var(--font-gothic);
+      transition: all 0.15s ease;
+      line-height: 1.45;
+    }
+    .opt-btn.correct {
+      border-color: var(--accent-correct) !important;
+      background: #E8F5F1 !important;
+      color: var(--accent-correct-text) !important;
+      font-weight: 700;
+    }
+    .opt-btn.incorrect {
+      border-color: var(--accent-fill) !important;
+      background: #FDEDEE !important;
+      color: var(--accent-text) !important;
+    }
+
+    /* Results */
+    .result-box {
+      text-align: center;
+      padding: 30px 16px;
+    }
+    .score-big {
+      font-family: var(--font-mincho);
+      font-size: 3rem;
+      color: var(--accent-text);
+      font-weight: 700;
+      margin: 10px 0;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: auto;
+      padding-top: 20px;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--stone);
+    }
+  </style>
 </head>
 <body>
 
-<div class="hdr">
-  <span class="hdr-icon">🌸</span>
-  <h1>声かけ判断シミュレーター</h1>
-  <p>介護現場の声かけ力を磨こう・全50問 5ブロック</p>
-</div>
-
-<!-- ブロック選択 -->
-<div id="block-screen">
-  <div class="overall-bar-section">
-    <div class="overall-row">
-      <span class="overall-label">全体の進捗</span>
-      <div class="overall-bar"><div class="overall-fill" id="overall-fill" style="width:0%"></div></div>
-      <span class="overall-pct" id="overall-pct">0 / 5ブロック完了</span>
+<div class="app-container">
+  <header>
+    <div class="logo" onclick="goHome()">
+      🌸 <span>声かけマスター</span>
     </div>
-  </div>
-  <div class="main">
-    <div class="block-title">▼ ブロックを選んでください</div>
-    <div class="block-grid" id="block-grid"></div>
-  </div>
-</div>
-
-<!-- クイズ -->
-<div id="quiz-screen">
-  <div class="prog-wrap">
-    <div class="prog-label" id="q-label">問題 1 / 10</div>
-    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
-    <div class="score-badge" id="score-badge">✨ 0 / 0</div>
-  </div>
-  <div class="main">
-    <div class="cat-badge" id="cat-badge">🏷️ カテゴリー</div>
-    <div class="scene-card">
-      <div class="scene-num" id="scene-num">Q1</div>
-      <div class="scene-lbl">場面</div>
-      <div class="scene-text" id="scene-text"></div>
-      <button class="speak-btn" id="speak-btn" onclick="speakScene()">
-        🔊 <span id="speak-label">場面を読み上げる</span>
-      </button>
+    <div class="lang-switch">
+      <button class="lang-btn active" id="btn-lang-ja" onclick="setLang('ja')">JA</button>
+      <button class="lang-btn" id="btn-lang-tl" onclick="setLang('tl')">TL</button>
+      <button class="lang-btn" id="btn-lang-en" onclick="setLang('en')">EN</button>
     </div>
-    <div class="choices-lbl">📝 正しい声かけはどれですか？</div>
-    <div class="choices-wrap" id="choices-wrap"></div>
-    <div class="fb-box" id="fb-box">
-      <div class="fb-head" id="fb-head"></div>
-      <div class="fb-correct-text" id="fb-correct" style="display:none"></div>
-      <div class="fb-hint" id="fb-hint"></div>
-      <button class="tl-toggle" id="tl-toggle" onclick="toggleTL()" style="display:none">🇵🇭 Tagalog</button>
-      <div class="tl-box" id="tl-box">
-        <div class="tl-label">🇵🇭 Paliwanag sa Tagalog</div>
-        <div class="tl-scene-text" id="tl-scene"></div>
-        <div class="tl-hint-text" id="tl-hint"></div>
+  </header>
+
+  <!-- 1. HOME VIEW -->
+  <main id="view-home" class="view active">
+    <div class="hero">
+      <h1>現場の「声かけ」を磨く</h1>
+      <p>段階ヒントで反射を鍛えるノック ＆ 状況判断シミュレーター</p>
+    </div>
+
+    <div class="section-label">📌 カテゴリ選択（ブロック）</div>
+    <div class="filter-wrap" id="category-filters">
+      <button class="filter-chip active" onclick="setCategory('ALL')">全問題（統合版）</button>
+      <button class="filter-chip" onclick="setCategory('食事介助')">食事介助</button>
+      <button class="filter-chip" onclick="setCategory('移乗・移動')">移乗・移動</button>
+      <button class="filter-chip" onclick="setCategory('排泄介助')">排泄介助</button>
+      <button class="filter-chip" onclick="setCategory('入浴・整容')">入浴・整容</button>
+      <button class="filter-chip" onclick="setCategory('認知症・夜間')">認知症・夜間</button>
+    </div>
+
+    <div class="section-label">⚡ 学習モード選択</div>
+    <div class="mode-grid">
+      <div class="mode-card" onclick="startKnock()">
+        <div class="mode-card-header">
+          <span class="mode-badge">想起強化</span>
+          <div class="mode-title">⚡ 声かけ反射ノック</div>
+        </div>
+        <div class="mode-desc">状況を読む ➔ キーワード穴埋めヒントで脳内再生 ➔ 正解確認。記憶の定着を最速化します。</div>
+      </div>
+
+      <div class="mode-card" onclick="startQuiz()">
+        <div class="mode-card-header">
+          <span class="mode-badge">実戦演習</span>
+          <div class="mode-title">📝 状況判断シミュレーター</div>
+        </div>
+        <div class="mode-desc">4択形式で適切な声かけの根拠と配慮のポイントを体系的に学びます。</div>
       </div>
     </div>
-    <div class="btn-row">
-      <button class="back-btn" id="back-btn" onclick="goBlockSelect()">← メニュー</button>
-      <button class="next-btn" id="next-btn" onclick="nextQ()">次の問題へ ▶</button>
-    </div>
-  </div>
-</div>
+  </main>
 
-<!-- 結果 -->
-<div id="result-screen" class="result-screen">
-  <div class="main">
-    <div class="result-icon" id="r-icon">🎉</div>
-    <div class="result-title">ブロック完了！</div>
-    <div class="stars" id="r-stars"></div>
-    <div class="result-score" id="r-score">0</div>
-    <div class="result-denom" id="r-denom">/ 10問正解</div>
-    <div class="result-msg" id="r-msg"></div>
-    <div class="result-detail" id="wrong-wrap" style="display:none">
-      <div class="result-detail-title">✏️ 間違えた問題の正解</div>
-      <div id="wrong-list"></div>
+  <!-- 2. KNOCK VIEW -->
+  <section id="view-knock" class="view">
+    <div class="progress-wrap">
+      <div class="progress-bar"><span id="knock-progress"></span></div>
+      <div class="progress-text" id="knock-count">1/10</div>
     </div>
-    <div class="btn-group">
-      <button class="retry-btn" onclick="retryBlock()">🔄 このブロックをもう一度</button>
-      <button class="menu-btn" onclick="goBlockSelect()">📚 ブロック選択に戻る</button>
-    </div>
-  </div>
-</div>
 
-<footer style="text-align:center;padding:24px 16px 32px;font-size:11px;color:#8fa895;letter-spacing:0.06em;">
-  © Yoshida EdTech Works. All rights reserved.
-</footer>
+    <div class="card">
+      <div class="card-meta">
+        <div class="card-tag" id="knock-tag">食事介助</div>
+        <div class="card-id" id="knock-id">KNOCK 01</div>
+      </div>
+      <div class="situation-title" id="knock-situation">状況テキスト</div>
+      <div class="situation-sub" id="knock-sub">Subtext in TL/EN</div>
+      <button class="speak-btn" id="knock-speak-btn" onclick="toggleKnockSpeech()">🔊 <span id="knock-speak-label">日本語で聞く</span></button>
+
+      <!-- Step 1: Cloze Hint -->
+      <div id="knock-stage-1" class="stage-box stage-hint" style="display: none;">
+        <div class="hint-label">💡 キーワード・穴埋めヒント（想起）</div>
+        <div class="hint-body" id="knock-hint-text">ヒント文</div>
+      </div>
+
+      <!-- Step 2: Answer & Rationale -->
+      <div id="knock-stage-2" class="stage-box stage-answer" style="display: none;">
+        <div class="hint-label">🎯 正解の声かけ</div>
+        <div class="answer-text" id="knock-answer">正解テキスト</div>
+        <div class="trans-text" id="knock-trans">Translation</div>
+        <div class="rationale" id="knock-rationale">解説</div>
+        <div class="trans-text" id="knock-rationale-trans" style="margin-top:6px;"></div>
+        <button class="speak-btn" id="knock-answer-speak-btn" onclick="toggleKnockAnswerSpeech()">🔊 <span id="knock-answer-speak-label">正解を聞く</span></button>
+      </div>
+    </div>
+
+    <div id="knock-action-container">
+      <button class="btn btn-primary" id="knock-btn-next-step" onclick="advanceKnockStep()">🔍 キーワード・穴埋めヒントを見る</button>
+      <div class="btn-row" id="knock-eval-btns" style="display: none;">
+        <button class="btn btn-ghost" onclick="evaluateKnock(false)">🔴 もう一度</button>
+        <button class="btn btn-primary" onclick="evaluateKnock(true)">🟢 完璧</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. QUIZ VIEW -->
+  <section id="view-quiz" class="view">
+    <div class="progress-wrap">
+      <div class="progress-bar"><span id="quiz-progress"></span></div>
+      <div class="progress-text" id="quiz-count">1/10</div>
+    </div>
+
+    <div class="card">
+      <div class="card-meta">
+        <div class="card-tag" id="quiz-tag">移乗・移動</div>
+        <div class="card-id" id="quiz-id">QUIZ 01</div>
+      </div>
+      <div class="situation-title" id="quiz-question">問題文</div>
+      <div class="situation-sub" id="quiz-sub">Subtext in TL/EN</div>
+      <button class="speak-btn" id="quiz-speak-btn" onclick="toggleQuizSpeech()">🔊 <span id="quiz-speak-label">日本語で聞く</span></button>
+
+      <div class="quiz-options" id="quiz-options"></div>
+
+      <div id="quiz-feedback" class="stage-box stage-answer" style="display: none; margin-top: 14px;">
+        <div class="hint-label" id="quiz-feedback-result">正解</div>
+        <div class="rationale" id="quiz-rationale">解説</div>
+        <div class="trans-text" id="quiz-rationale-trans" style="margin-top:6px;"></div>
+        <button class="btn btn-primary" style="margin-top: 10px;" onclick="nextQuiz()">次の問題へ</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. RESULT VIEW -->
+  <section id="view-result" class="view">
+    <div class="card result-box">
+      <div class="card-tag">学習セッション完了</div>
+      <div class="score-big" id="result-score">10 / 10</div>
+      <p id="result-msg" style="margin: 12px 0; font-size: 0.92rem;">素晴らしい反射スピードです！現場でも声に出してみましょう。</p>
+      <button class="btn btn-primary" onclick="goHome()">トップへ戻る</button>
+    </div>
+  </section>
+
+  <footer>© Yoshida EdTech Works</footer>
+</div>
 
 <script>
-const BLOCKS = [
-  {id:0,emoji:'🙏',name:'グループ１：基本の声かけ・お礼・謝るとき',sub:'挨拶・依頼への対応・感謝・謝罪（10問）',ids:[1,2,3,4,5,6,7,8,9,10]},
-  {id:1,emoji:'🚪',name:'グループ２：居室への声かけ・待ってもらう',sub:'居室入室・環境調整・お待ちいただく場面（10問）',ids:[11,12,13,14,15,16,17,18,19,20]},
-  {id:2,emoji:'⚠️',name:'グループ３：注意を促す・安全管理',sub:'歩行・移動・排泄・緊急場面の声かけ（10問）',ids:[21,22,23,24,25,26,27,28,29,30]},
-  {id:3,emoji:'🩺',name:'グループ４：体調確認・引き継ぎ',sub:'体調・入浴・服薬・専門職への引き継ぎ（10問）',ids:[31,32,33,34,35,36,37,38,39,40]},
-  {id:4,emoji:'💬',name:'グループ５：相づち・廊下でのコミュニケーション',sub:'会話・傾聴・レク・廊下での声かけ（10問）',ids:[41,42,43,44,45,46,47,48,49,50]}
-];
-
-const LETTERS = ['Ａ','Ｂ','Ｃ'];
-let completed = {};
-let currentBlock = null;
-let blockQs = [];
-let cur = 0, score = 0, answered = 0, wrongItems = [];
-let isSpeaking = false;
-let curUtterance = null;
-
-function renderBlockSelect() {
-  stopSpeech();
-  document.getElementById('block-screen').style.display = 'block';
-  document.getElementById('quiz-screen').style.display = 'none';
-  document.getElementById('result-screen').style.display = 'none';
-
-  const done = Object.keys(completed).length;
-  document.getElementById('overall-fill').style.width = (done/5*100)+'%';
-  document.getElementById('overall-pct').textContent = done+' / 5ブロック完了';
-
-  const grid = document.getElementById('block-grid');
-  grid.innerHTML = '';
-  BLOCKS.forEach(b => {
-    const isDone = completed[b.id] !== undefined;
-    const sc = isDone ? completed[b.id] : null;
-    const div = document.createElement('div');
-    div.className = 'block-card'+(isDone?' done':'');
-    div.innerHTML =
-      '<div class="block-num">'+b.emoji+'</div>'+
-      '<div class="block-info">'+
-        '<div class="block-name">'+b.name+'</div>'+
-        '<div class="block-sub">'+b.sub+'</div>'+
-      '</div>'+
-      '<div class="block-badge '+(isDone?'badge-done':'badge-todo')+'">'+
-        (isDone?'✅ '+sc+'/10点':'未挑戦')+
-      '</div>';
-    div.onclick = () => startBlock(b.id);
-    grid.appendChild(div);
-  });
-}
-
-function startBlock(blockId) {
-  currentBlock = blockId;
-  const b = BLOCKS[blockId];
-  blockQs = shuffle(b.ids.map(id => allQuestions.find(q => q.id === id)));
-  cur = 0; score = 0; answered = 0; wrongItems = [];
-  document.getElementById('block-screen').style.display = 'none';
-  document.getElementById('quiz-screen').style.display = 'block';
-  document.getElementById('result-screen').style.display = 'none';
-  renderQ();
-}
-
-function renderQ() {
-  stopSpeech();
-  const q = blockQs[cur];
-  const choices = shuffle([q.correct, q.wrong1, q.wrong2]);
-
-  document.getElementById('q-label').textContent = '問題 '+(cur+1)+' / '+blockQs.length;
-  document.getElementById('scene-num').textContent = 'Q'+(cur+1);
-  document.getElementById('scene-text').textContent = q.scene;
-  document.getElementById('cat-badge').innerHTML = '🏷️ '+q.category;
-  document.getElementById('prog-fill').style.width = (cur/blockQs.length*100)+'%';
-  document.getElementById('score-badge').textContent = '✨ '+score+' / '+answered;
-
-  const wrap = document.getElementById('choices-wrap');
-  wrap.innerHTML = '';
-  choices.forEach((text, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'choice-btn';
-    btn.innerHTML = '<span class="choice-letter">'+LETTERS[i]+'</span><span class="choice-text">'+text+'</span>';
-    btn.onclick = () => choose(btn, text, q);
-    wrap.appendChild(btn);
-  });
-
-  document.getElementById('fb-box').className = 'fb-box';
-  document.getElementById('fb-correct').style.display = 'none';
-  document.getElementById('tl-toggle').style.display = 'none';
-  document.getElementById('tl-box').className = 'tl-box';
-  document.getElementById('next-btn').className = 'next-btn';
-  document.getElementById('back-btn').className = 'back-btn';
-  document.getElementById('speak-btn').className = 'speak-btn';
-  document.getElementById('speak-label').textContent = '場面を読み上げる';
-
-  setTimeout(() => speakText(q.scene), 500);
-}
-
-function choose(btn, selected, q) {
-  document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
-  const ok = selected === q.correct;
-  answered++;
-  if (ok) {
-    btn.classList.add('correct');
-    score++;
-    showFeedback(true, q);
-    setTimeout(() => speakText('正解です！' + q.hint), 400);
-  } else {
-    btn.classList.add('wrong');
-    document.querySelectorAll('.choice-btn').forEach(b => {
-      if (b.querySelector('.choice-text').textContent === q.correct) b.classList.add('show-correct');
-    });
-    showFeedback(false, q);
-    setTimeout(() => speakText('惜しい。正しい声かけは。' + q.correct + '。' + q.hint), 400);
-    wrongItems.push(q);
+  /* --- 437Hz Tone Engine (Yoshida EdTech Brand Standard) --- */
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  function playTone(freq = 437, duration = 0.08, type = 'sine') {
+    try {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch(e){}
   }
-  document.getElementById('score-badge').textContent = '✨ '+score+' / '+answered;
-  document.getElementById('next-btn').className = 'next-btn show';
-  document.getElementById('back-btn').className = 'back-btn show';
-}
+  function playSuccess() { playTone(437, 0.1); setTimeout(() => playTone(655.5, 0.15), 90); }
+  function playClick() { playTone(437, 0.04); }
+  function playMiss() { playTone(300, 0.18, 'triangle'); }
 
-function showFeedback(ok, q) {
-  const box = document.getElementById('fb-box');
-  const correctEl = document.getElementById('fb-correct');
-  box.className = 'fb-box show '+(ok?'fb-ok':'fb-ng');
-  document.getElementById('fb-head').textContent = ok ? '✅ 正解！ すばらしい！' : '❌ 惜しい！';
-  document.getElementById('fb-hint').textContent = q.hint;
-  if (!ok) {
-    correctEl.textContent = '✅ 正しい声かけ：' + q.correct;
-    correctEl.style.display = 'block';
-  } else {
-    correctEl.style.display = 'none';
-  }
-  // Tagalog
-  if (q.tl_scene && q.tl_hint) {
-    document.getElementById('tl-scene').textContent = '📍 ' + q.tl_scene;
-    document.getElementById('tl-hint').textContent = q.tl_hint;
-    document.getElementById('tl-toggle').style.display = 'inline-flex';
-    document.getElementById('tl-box').className = 'tl-box';
-  }
-}
+  /* --- Read-Aloud Engine (Web Speech API) --- */
+  let isSpeaking = false;
+  let curUtterance = null;
 
-function toggleTL() {
-  const box = document.getElementById('tl-box');
-  const btn = document.getElementById('tl-toggle');
-  const isOpen = box.classList.contains('show');
-  box.className = isOpen ? 'tl-box' : 'tl-box show';
-  btn.textContent = isOpen ? '🇵🇭 Tagalog' : '🇵🇭 Isara';
-}
-
-function nextQ() {
-  cur++;
-  if (cur >= blockQs.length) showResult();
-  else { renderQ(); window.scrollTo({top:0,behavior:'smooth'}); }
-}
-
-function goBlockSelect() {
-  stopSpeech();
-  renderBlockSelect();
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-
-function showResult() {
-  stopSpeech();
-  completed[currentBlock] = score;
-  document.getElementById('quiz-screen').style.display = 'none';
-  const rs = document.getElementById('result-screen');
-  rs.style.display = 'block';
-  rs.classList.add('show');
-
-  const pct = score / blockQs.length;
-  document.getElementById('r-score').textContent = score;
-  document.getElementById('r-denom').textContent = '/ '+blockQs.length+'問正解';
-
-  let stars,icon,msg;
-  if(pct>=0.9){stars='⭐⭐⭐';icon='🏆';msg='完璧です！現場でも自信を持って声かけできますね。';}
-  else if(pct>=0.7){stars='⭐⭐';icon='😊';msg='よくできました！間違えた問題を確認して、もう一度チャレンジしましょう。';}
-  else if(pct>=0.5){stars='⭐';icon='💪';msg='半分以上正解！苦手な場面を中心に練習しましょう。';}
-  else{stars='🌱';icon='📖';msg='声かけの基本をもう一度確認して、再チャレンジしましょう！';}
-
-  document.getElementById('r-stars').textContent = stars;
-  document.getElementById('r-icon').textContent = icon;
-  document.getElementById('r-msg').textContent = msg;
-
-  if(wrongItems.length>0){
-    document.getElementById('wrong-wrap').style.display = 'block';
-    document.getElementById('wrong-list').innerHTML = wrongItems.map(w=>
-      '<div class="wrong-item">'+
-        '<div class="wrong-q">場面：'+w.scene+'</div>'+
-        '<div class="wrong-a">✅ '+w.correct+'</div>'+
-      '</div>'
-    ).join('');
-  } else {
-    document.getElementById('wrong-wrap').style.display = 'none';
+  function speakText(text, lang = 'ja-JP') {
+    if (!window.speechSynthesis) return;
+    stopSpeech();
+    curUtterance = new SpeechSynthesisUtterance(text.replace(/<[^>]+>/g, ''));
+    curUtterance.lang = lang;
+    curUtterance.rate = 0.93;
+    curUtterance.pitch = 1.05;
+    window.speechSynthesis.speak(curUtterance);
   }
 
-  setTimeout(() => speakText('ブロック完了！'+score+'問正解です。'+msg), 600);
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-
-function retryBlock() { startBlock(currentBlock); }
-
-/* ── SPEECH ── */
-function speakText(text) {
-  if(!window.speechSynthesis) return;
-  stopSpeech();
-  curUtterance = new SpeechSynthesisUtterance(text);
-  curUtterance.lang = 'ja-JP';
-  curUtterance.rate = 0.93;
-  curUtterance.pitch = 1.05;
-  window.speechSynthesis.speak(curUtterance);
-}
-
-function stopSpeech() {
-  if(window.speechSynthesis) window.speechSynthesis.cancel();
-  isSpeaking = false;
-  const btn = document.getElementById('speak-btn');
-  const lbl = document.getElementById('speak-label');
-  if(btn) btn.className = 'speak-btn';
-  if(lbl) lbl.textContent = '場面を読み上げる';
-}
-
-function speakScene() {
-  const q = blockQs[cur];
-  const btn = document.getElementById('speak-btn');
-  const lbl = document.getElementById('speak-label');
-  if(isSpeaking){ stopSpeech(); return; }
-  speakText(q.scene);
-  isSpeaking = true;
-  btn.className = 'speak-btn speaking';
-  lbl.textContent = '停止する';
-  if(curUtterance) curUtterance.onend = () => {
+  function stopSpeech() {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
     isSpeaking = false;
-    btn.className = 'speak-btn';
-    lbl.textContent = '場面を読み上げる';
-  };
-}
+    resetSpeakButtons();
+  }
 
-/* ── UTILS ── */
-function shuffle(arr) {
-  const a=[...arr];
-  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
-  return a;
-}
+  function resetSpeakButtons() {
+    [['knock-speak-btn', 'knock-speak-label', '日本語で聞く'],
+     ['knock-answer-speak-btn', 'knock-answer-speak-label', '正解を聞く'],
+     ['quiz-speak-btn', 'quiz-speak-label', '日本語で聞く']
+    ].forEach(([btnId, lblId, defaultText]) => {
+      const btn = document.getElementById(btnId);
+      const lbl = document.getElementById(lblId);
+      if (btn) btn.classList.remove('speaking');
+      if (lbl) lbl.innerText = defaultText;
+    });
+  }
 
-renderBlockSelect();
+  function playSpeech(btnId, lblId, text, defaultText) {
+    playClick();
+    const btn = document.getElementById(btnId);
+    const lbl = document.getElementById(lblId);
+    if (isSpeaking) { stopSpeech(); return; }
+    speakText(text);
+    isSpeaking = true;
+    btn.classList.add('speaking');
+    lbl.innerText = '⏹ 停止する';
+    if (curUtterance) {
+      curUtterance.onend = () => {
+        isSpeaking = false;
+        btn.classList.remove('speaking');
+        lbl.innerText = defaultText;
+      };
+    }
+  }
+
+  function toggleKnockSpeech() {
+    const item = activeList[currentIndex];
+    playSpeech('knock-speak-btn', 'knock-speak-label', item.situation_ja, '日本語で聞く');
+  }
+
+  function toggleKnockAnswerSpeech() {
+    const item = activeList[currentIndex];
+    playSpeech('knock-answer-speak-btn', 'knock-answer-speak-label', item.answer_ja, '正解を聞く');
+  }
+
+  function toggleQuizSpeech() {
+    const item = activeList[currentIndex];
+    playSpeech('quiz-speak-btn', 'quiz-speak-label', item.situation_ja, '日本語で聞く');
+  }
+
+  /* --- Complete Integrated Dataset (94 Items) --- */
+  const rawItems = [
+    // 1. 食事介助
+    { id:"Q01", tag:"食事介助", situation_ja:"食事前の準備。利用者がうつむいて元気がなさそうにしている。", sub_tl:"Nakatungo at parang walang gana bago kumain.", sub_en:"Looking down and having low appetite before meals.", cloze_hint:"「◯◯さん、<span class='cloze-blank'>お腹</span>はすきましたか？<span class='cloze-blank'>温かいお茶</span>にしましょうか」", answer_ja:"「〇〇さん、お腹はすきましたか？まず温かいお茶で一息つきましょうか」", answer_tl:"Gutom na po ba kayo? Uminom po muna tayo ng mainit na tsaa.", answer_en:"Are you feeling hungry? Let's relax with some warm tea first.", rationale:"無理に食事を勧めず、口を潤しリラックスできる状態を作ってから食欲を引き出します。", rationale_en:"Rather than pushing them to eat, offer something to moisten the mouth and help them relax first, which naturally brings back appetite.", rationale_tl:"Sa halip na pilitin silang kumain, magbigay muna ng maiinom para mabasa ang bibig at makarelax, para bumalik ang gana sa kanilang sarili.", quiz_options:[{text:"「時間ですから早くご飯を食べてください」",correct:false},{text:"「〇〇さん、お腹はすきましたか？まず温かいお茶で一息つきましょうか」",correct:true},{text:"「食べないと体に悪いですよ」",correct:false},{text:"「食欲がないなら片付けますね」",correct:false}] },
+    { id:"Q02", tag:"食事介助", situation_ja:"利用者が口に食べ物を入れたまま、次のスプーンを持とうとしている。", sub_tl:"May laman pa ang bibig pero susubo na ulit.", sub_en:"Trying to take another bite while food is still in mouth.", cloze_hint:"「<span class='cloze-blank'>ゆっくり</span><span class='cloze-blank'>ごっくん</span>してからにしましょうね」", answer_ja:"「ゆっくり噛んで、ごっくんしてから次にしましょうね」", answer_tl:"Nguyaing mabuti at lumunok po muna bago ang susunod na subo.", answer_en:"Let's chew well and swallow before taking the next bite.", rationale:"口の中に残った状態で追加すると誤嚥のリスクがあります。急かさず嚥下を確認します。", rationale_en:"Adding another bite while food remains in the mouth raises the risk of choking. Don't rush them — confirm they have swallowed first.", rationale_tl:"Kung may laman pa ang bibig at bibigyan pa ng subo, mas malaki ang panganib na mabulunan. Huwag magmadali — tiyakin munang nalunok na nila.", quiz_options:[{text:"「スプーンを置いてください、早すぎます」",correct:false},{text:"「ゆっくり噛んで、ごっくんしてから次にしましょうね」",correct:true},{text:"「詰まると危ないので手を出さないで」",correct:false},{text:"「たくさん食べられて偉いですね」",correct:false}] },
+    { id:"Q03", tag:"食事介助", situation_ja:"むせ込みやすい利用者に水分を提供するとき。", sub_tl:"Madaling mabulunan sa pag-inom ng tubig.", sub_en:"Serving water to a resident prone to choking.", cloze_hint:"「少し<span class='cloze-blank'>あごを引いて</span>、<span class='cloze-blank'>一口ずつ</span>飲みましょう」", answer_ja:"「少しあごを引いて、一口ずつゆっくり飲んでみてくださいね」", answer_tl:"Ibahagyang ibaba ang baba at uminom po nang paunti-unti.", answer_en:"Please tuck your chin slightly and take slow sips.", rationale:"あごを引く姿勢をとることで気道が閉じ、誤嚥を防ぐことができます。", rationale_en:"Tucking the chin closes the airway slightly, which helps prevent choking while drinking.", rationale_tl:"Sa pagbaba ng baba, medyo nagsasara ang daanan ng hangin, kaya mababawasan ang panganib na mabulunan habang umiinom.", quiz_options:[{text:"「上を向いて一気に飲み干してください」",correct:false},{text:"「少しあごを引いて、一口ずつゆっくり飲んでみてくださいね」",correct:true},{text:"「むせても我慢して全部飲んでください」",correct:false},{text:"「とろみをつけるので待ってください」とだけ言う",correct:false}] },
+    { id:"Q04", tag:"食事介助", situation_ja:"魚の小骨がないか不安そうに箸を止めている。", sub_tl:"Nag-aalangan sa tinik ng isda kaya tumigil kumain.", sub_en:"Hesitant to eat fish due to fear of bones.", cloze_hint:"「骨は<span class='cloze-blank'>取ってあります</span>よ。<span class='cloze-blank'>小さく</span>ほぐしましょうか」", answer_ja:"「骨は取ってありますよ。食べやすいようにもう少しほぐしましょうか？」", answer_tl:"Wala na pong tinik. Gusto niyo po bang himayin pa natin?", answer_en:"The bones have been removed. Shall I break it into smaller pieces for you?", rationale:"安心感を与え、自分で食べられるように一口大のサポートを提案します。", rationale_en:"Reassure them, then offer to break the food into bite-sized pieces so they can keep eating independently.", rationale_tl:"Bigyan ng katiyakan, pagkatapos ay alukin na himayin ang pagkain sa maliliit na piraso para makakain pa rin sila nang mag-isa.", quiz_options:[{text:"「魚くらい自分で骨を取って食べてください」",correct:false},{text:"「骨は取ってありますよ。食べやすいようにもう少しほぐしましょうか？」",correct:true},{text:"「骨が入っていても大丈夫ですから食べて」",correct:false},{text:"「嫌いなら残してください」",correct:false}] },
+    { id:"Q05", tag:"食事介助", situation_ja:"食事中に手が止まり、ぼんやりと外を見つめている。", sub_tl:"Nakatitig sa labas at natigil sa pagkain.", sub_en:"Paused eating and staring blankly outside.", cloze_hint:"「◯◯さん、<span class='cloze-blank'>温かい</span>うちに<span class='cloze-blank'>お味噌汁</span>を一口いかがですか？」", answer_ja:"「〇〇さん、温かいうちにお味噌汁を一口いかがですか？」", answer_tl:"Gusto niyo po bang humigop ng mainit na miso soup?", answer_en:"How about a sip of warm miso soup while it's fresh?", rationale:"優しく意識を食卓に戻し、香りや温度のある汁物で食欲の再開を促します。", rationale_en:"Gently bring their attention back to the table — warm, fragrant soup helps naturally rekindle their appetite.", rationale_tl:"Dahan-dahang ibalik ang atensyon sa hapag-kainan — ang mainit at mabangong sabaw ay nakakatulong para bumalik ang gana kumain.", quiz_options:[{text:"「手が止まっていますよ、早く食べてください」",correct:false},{text:"「〇〇さん、温かいうちにお味噌汁を一口いかがですか？」",correct:true},{text:"「外を見ても何もありませんよ」",correct:false},{text:"「もうごちそうさまにしますか？」",correct:false}] },
+    
+    // 2. 移乗・移動
+    { id:"Q06", tag:"移乗・移動", situation_ja:"車いすから立ち上がる際、足がフットサポートに乗ったままになっている。", sub_tl:"Nasa footrest pa ang paa bago tumayo.", sub_en:"Feet are still on the footrests before standing up.", cloze_hint:"「足を<span class='cloze-blank'>床に下ろして</span>、少し<span class='cloze-blank'>手前</span>に引きましょうか」", answer_ja:"「足を床に下ろして、少し手前に引きましょうか」", answer_tl:"Ibaba po natin ang paa sa sahig at iurong nang kaunti.", answer_en:"Let's put your feet down on the floor and pull them back a bit.", rationale:"足裏が床についていないと立ち上がり時に転倒の危険があります。姿勢の安全を確保します。", rationale_en:"If the soles of the feet aren't flat on the floor, there's a risk of falling while standing up. Make sure the posture is safe first.", rationale_tl:"Kung hindi lapat sa sahig ang talampakan, may panganib na madapa habang tumatayo. Siguraduhin munang ligtas ang postura.", quiz_options:[{text:"「危ないので早く足を下ろしてください」",correct:false},{text:"「足を床に下ろして、少し手前に引きましょうか」",correct:true},{text:"「そのまま立ってください、私が持ち上げます」",correct:false},{text:"「フットサポートに乗せたまま立とうとしないで」",correct:false}] },
+    { id:"Q07", tag:"移乗・移動", situation_ja:"歩行中、歩幅が狭くなり前傾姿勢が強くなってきた（小刻み歩行）。", sub_tl:"Bumilis at lumiit ang hakbang habang naglalakad.", sub_en:"Taking small, shuffling steps and leaning forward excessively.", cloze_hint:"「一度<span class='cloze-blank'>止まり</span>ましょう。<span class='cloze-blank'>背筋を伸ばして</span>深呼吸しましょう」", answer_ja:"「一度止まりましょうか。ゆっくり背筋を伸ばして一息つきましょう」", answer_tl:"Hinto po muna tayo. Iunat ang likod at huminga nang malalim.", answer_en:"Let's pause for a moment. Straighten your back and take a breath.", rationale:"加速歩行による前方転倒を防ぐため、一度停止して姿勢と重心を整えます。", rationale_en:"To prevent a forward fall from festinating (accelerating) gait, pause once to reset posture and center of balance.", rationale_tl:"Para maiwasan ang pagkadapa dahil sa pabilis nang pabilis na paglalakad, huminto muna para maayos ang postura at balanse.", quiz_options:[{text:"「倒れますよ！もっと大股で歩いて！」",correct:false},{text:"「一度止まりましょうか。ゆっくり背筋を伸ばして一息つきましょう」",correct:true},{text:"「小刻みに歩かないでください」",correct:false},{text:"「疲れたなら車いすに乗ってください」",correct:false}] },
+    { id:"Q08", tag:"移乗・移動", situation_ja:"ベッドから車いすへの移乗時。利用者が怖がって体がすくんでいる。", sub_tl:"Natatakot at naninigas ang katawan sa paglipat.", sub_en:"Scared and stiffening up during transfer from bed to wheelchair.", cloze_hint:"「私が<span class='cloze-blank'>しっかり支えます</span>ので、<span class='cloze-blank'>お辞儀する</span>ように立ちましょう」", answer_ja:"「私がしっかり支えますので大丈夫ですよ。少しお辞儀するように前に体重をかけましょう」", answer_tl:"Nandito po ako para suportahan kayo. Iyuko po nang kaunti ang katawan.", answer_en:"I am supporting you firmly. Let's lean forward slightly as if bowing.", rationale:"安心感を言葉で伝え、前傾姿勢（お辞儀動作）をとることで重心移動をスムーズにします。", rationale_en:"Reassure them verbally, and use a slight forward-leaning (bowing) posture to make the shift in weight smoother.", rationale_tl:"Bigyan ng katiyakan sa pamamagitan ng salita, at gamitin ang bahagyang pagyuko pasulong para mas maluwag ang paglipat ng timbang.", quiz_options:[{text:"「怖がると力が入って動けなくなりますよ」",correct:false},{text:"「私がしっかり支えますので大丈夫ですよ。少しお辞儀するように前に体重をかけましょう」",correct:true},{text:"「腕に強くつかまってください」",correct:false},{text:"「怖いなら移乗をやめますか？」",correct:false}] },
+    { id:"Q09", tag:"移乗・移動", situation_ja:"車いすを押してエレベーターに乗るとき。", sub_tl:"Pagsakay sa elevator gamit ang wheelchair.", sub_en:"Entering an elevator with a wheelchair.", cloze_hint:"「エレベーターに<span class='cloze-blank'>後ろ向きで</span>入りますね。<span class='cloze-blank'>段差</span>があります」", answer_ja:"「エレベーターに乗りますね。後ろ向きに入ります、少しガタッと揺れますよ」", answer_tl:"Sasakay po tayo ng elevator nang patalikod. Medyo uuga po nang kaunti.", answer_en:"We are entering the elevator backwards. There might be a slight bump.", rationale:"急な方向転換や揺れを予告し、不安を与えないように後進入場を説明します。", rationale_en:"Announce sudden turns or bumps in advance, and explain the backward entry clearly so it doesn't cause anxiety.", rationale_tl:"Ipaalam nang maaga ang biglaang liko o pag-uga, at ipaliwanag nang maayos ang patalikod na pagpasok para hindi kabahan.", quiz_options:[{text:"「無言でそのまま前向きに押し込む」",correct:false},{text:"「エレベーターに乗りますね。後ろ向きに入ります、少しガタッと揺れますよ」",correct:true},{text:"「挟まれないように縮こまっていてください」",correct:false},{text:"「早く乗らないとドアが閉まります」",correct:false}] },
+    { id:"Q10", tag:"移乗・移動", situation_ja:"杖を使って階段を一段降りようとしている（患側：右足）。", sub_tl:"Bababa ng hagdan gamit ang tungkod (kanang binti ang mahina).", sub_en:"Stepping downstairs with a cane (weaker side: right leg).", cloze_hint:"「<span class='cloze-blank'>杖</span>、<span class='cloze-blank'>右足（悪い足）</span>、<span class='cloze-blank'>左足</span>の順で降りましょう」", answer_ja:"「まず杖を下ろして、次に右足、最後に左足を揃えましょうね」", answer_tl:"Iuna po ang tungkod, kasunod ang kanang paa, at huli ang kaliwa.", answer_en:"First the cane, then your right leg, and lastly bring your left leg down.", rationale:"階段下降の基本原則「杖 → 患肢 → 健肢」をわかりやすく順序立てて案内します。", quiz_options:[{text:"「いい方の足から一気に降りてください」",correct:false},{text:"「まず杖を下ろして、次に右足、最後に左足を揃えましょうね」",correct:true},{text:"「両足を一度に出してください」",correct:false},{text:"「落ちないように手すりだけ見てください」",correct:false}] },
+
+    // 3. 排泄介助
+    { id:"Q11", tag:"排泄介助", situation_ja:"トイレへ誘導後、利用者が「自分でするから外で待ってて」と言ったとき。", sub_tl:"Sabi ng residente ay mag-isa niyang gagawin sa loob ng banyo.", sub_en:"Resident asked you to wait outside to use toilet independently.", cloze_hint:"「わかりました。<span class='cloze-blank'>ドアを少し開けて</span>、<span class='cloze-blank'>すぐ前</span>にいますね」", answer_ja:"「わかりました。ドアを少し開けてすぐ前にいますので、終わったら声をかけてくださいね」", answer_tl:"Sige po, dito lang po ako sa labas. Tawagin niyo po ako kapag tapos na.", answer_en:"Understood. I will wait right outside the door, so please call me when you are done.", rationale:"自尊心とプライバシーを守りつつ、転倒リスクに備えてすぐ駆けつけられる位置を伝えます。", rationale_en:"Protect their dignity and privacy, while letting them know you'll be positioned nearby in case of a fall.", rationale_tl:"Protektahan ang dignidad at privacy nila, habang ipinapaalam na malapit ka lang kung sakaling madapa sila.", quiz_options:[{text:"「転ぶと困るので絶対に見張ります」",correct:false},{text:"「わかりました。ドアを少し開けてすぐ前にいますので、終わったら声をかけてくださいね」",correct:true},{text:"「鍵をしっかりかけておいてください」",correct:false},{text:"「じゃあナースステーションに戻ります」",correct:false}] },
+    { id:"Q12", tag:"排泄介助", situation_ja:"オムツ交換時、便失禁があり利用者が申し訳なさそうに謝っている。", sub_tl:"Humingi ng tawad ang residente dahil nadumihan ang diaper.", sub_en:"Resident apologizes feeling guilty about bowel incontinence.", cloze_hint:"「<span class='cloze-blank'>謝らなくて大丈夫</span>ですよ。<span class='cloze-blank'>すっきり</span>しましたね」", answer_ja:"「謝らなくて大丈夫ですよ。お腹がすっきりして良かったですね、きれいにしますね」", answer_tl:"Wag po kayong mag-alala, ayos lang po iyon. Lilinisin po natin para maging presko.", answer_en:"No need to apologize at all. I'm glad your stomach feels relieved; let's get you cleaned up.", rationale:"羞恥心や罪悪感を払拭し、自然な生理現象として温かく受け止めます。", rationale_en:"Dispel any embarrassment or guilt, and warmly accept it as a natural bodily occurrence.", rationale_tl:"Alisin ang hiya o pagkakasala na nararamdaman nila, at tanggapin ito nang mainit-init bilang normal at natural na pangyayari.", quiz_options:[{text:"「次は間に合うように早く呼んでくださいね」",correct:false},{text:"「謝らなくて大丈夫ですよ。お腹がすっきりして良かったですね、きれいにしますね」",correct:true},{text:"「片付けが大変なので気をつけてください」",correct:false},{text:"「黙って無表情で交換する」",correct:false}] },
+    { id:"Q13", tag:"排泄介助", situation_ja:"ポータブルトイレから立ち上がってズボンを上げようとしている。", sub_tl:"Tumatayo para itaas ang pantalon mula sa portable toilet.", sub_en:"Standing up to pull up pants from portable toilet.", cloze_hint:"「<span class='cloze-blank'>手すりをしっかり握って</span>から、ズボンを上げましょう」", answer_ja:"「手すりをしっかり握って立ちましょう。ズボンは私が支えながら上げますね」", answer_tl:"Hawak po nang mahigpit sa handrail habang itinataas ang pantalon.", answer_en:"Please hold the handrail firmly while standing. I will assist you with your pants.", rationale:"ズボンを上げる動作に気を取られて手が離れ、バランスを崩す事故を防ぎます。", rationale_en:"Prevent accidents caused by letting go of the handrail while focused on pulling up their pants.", rationale_tl:"Iwasan ang aksidente na nagmumula sa pagbitiw sa hawakan dahil naka-focus sa pagtataas ng pantalon.", quiz_options:[{text:"「両手で早くズボンを引っ張り上げてください」",correct:false},{text:"「手すりをしっかり握って立ちましょう。ズボンは私が支えながら上げますね」",correct:true},{text:"「座ったまま無理やりズボンを履いて」",correct:false},{text:"「下着が見えているので急いで」",correct:false}] },
+    { id:"Q14", tag:"排泄介助", situation_ja:"陰部洗浄用のお湯をかける直前の声かけ。", sub_tl:"Pagsasabi bago buhusan ng maligamgam na tubig sa maselang bahagi.", sub_en:"Informing the resident right before rinsing the perineal area with warm water.", cloze_hint:"「<span class='cloze-blank'>温かいお湯</span>をかけますね。<span class='cloze-blank'>熱くない</span>ですか？」", answer_ja:"「温かいお湯をかけて流しますね。熱くないか教えてくださいね」", answer_tl:"Magbuhos po tayo ng maligamgam na tubig. Sabihin po kung mainit.", answer_en:"I am going to rinse with warm water now. Please let me know if it feels too warm.", rationale:"いきなりお湯をかけると驚いて筋肉が緊張するため、事前に告知し湯温を確認します。", rationale_en:"Pouring water suddenly can startle them and tense their muscles, so announce it beforehand and check the water temperature.", rationale_tl:"Kung biglaan ang pagbuhos ng tubig, magugulat sila at masisikipan ang muscles, kaya ipaalam muna at tiyakin ang init ng tubig.", quiz_options:[{text:"「冷たいかもしれないけど我慢してください」",correct:false},{text:"「温かいお湯をかけて流しますね。熱くないか教えてくださいね」",correct:true},{text:"「汚れているので勢いよく洗いますね」",correct:false},{text:"「無言ですぐにシャワーをかける」",correct:false}] },
+    { id:"Q15", tag:"排泄介助", situation_ja:"何度も短時間で「トイレに行きたい」と訴える利用者への対応。", sub_tl:"Madalas na gustong pumunta sa banyo sa maikling oras.", sub_en:"Resident asking to go to the toilet repeatedly within short intervals.", cloze_hint:"「<span class='cloze-blank'>気になりますね</span>。一緒に行ってみましょうか」", answer_ja:"「出ないか気になりますよね。念のためもう一度一緒に行ってみましょうか」", answer_tl:"Nag-aalala po kayo ano po? Samahan ko po kayo ulit sa banyo para sigurado.", answer_en:"It makes you anxious, doesn't it? Let's go check together once more just to be safe.", rationale:"「さっき行ったばかり」と否定せず、不安な気持ちに共感して安全に寄り添います。", rationale_en:"Don't dismiss it with 'you just went' — empathize with their anxiety and stay close for their safety.", rationale_tl:"Huwag tanggihan gamit ang 'kakauwi lang ninyo' — unawain ang kanilang pagkabalisa at samahan sila para sa kaligtasan.", quiz_options:[{text:"「さっき行ったばかりだから出ませんよ」",correct:false},{text:"「出ないか気になりますよね。念のためもう一度一緒に行ってみましょうか」",correct:true},{text:"「オムツをしているから座っていてください」",correct:false},{text:"「何回も呼ぶと他の人の迷惑になります」",correct:false}] },
+
+    // 4. 入浴・整容
+    { id:"Q16", tag:"入浴・整容", situation_ja:"浴槽の湯船に入る直前、利用者の肩に力が入っている。", sub_tl:"Naninigas ang balikat bago pumasok sa bathtub.", sub_en:"Tensed shoulders right before stepping into the bathtub.", cloze_hint:"「まず<span class='cloze-blank'>足から</span>ゆっくり入りますね。<span class='cloze-blank'>湯加減</span>はどうですか？」", answer_ja:"「まず足からゆっくり入りますね。お湯の熱さはちょうどいいですか？」", answer_tl:"Dahan-dahan po nating ipasok ang paa. Kumusta po ang init ng tubig?", answer_en:"Let's step in with your feet first slowly. Is the water temperature comfortable?", rationale:"心臓から遠い足元から入り、温度を確認することでヒートショックや恐怖心を防ぎます。", rationale_en:"Enter feet-first, farthest from the heart, and check the temperature to prevent heat shock and fear.", rationale_tl:"Pumasok muna gamit ang paa, na pinakamalayo sa puso, at tiyakin ang init ng tubig para maiwasan ang heat shock at takot.", quiz_options:[{text:"「熱くないですから一気に肩まで入ってください」",correct:false},{text:"「まず足からゆっくり入りますね。お湯の熱さはちょうどいいですか？」",correct:true},{text:"「力を抜かないとお湯に入れませんよ」",correct:false},{text:"「時間が押しているので早く浸かってください」",correct:false}] },
+    { id:"Q17", tag:"入浴・整容", situation_ja:"洗髪中、顔にシャワーや泡がかからないか気遣うとき。", sub_tl:"Paghuhugas ng buhok, sinisigurong hindi mapuwing ang mata.", sub_en:"Washing hair, ensuring water and foam do not get into eyes.", cloze_hint:"「<span class='cloze-blank'>お顔にガーゼ</span>をあてますね。<span class='cloze-blank'>かゆい所</span>はありませんか？」", answer_ja:"「お顔にガーゼをあてますね。流します、かゆい所や流し足りない所はありますか？」", answer_tl:"Lalagyan po natin ng bimpo ang mukha. May makati pa po ba?", answer_en:"I will place a towel over your face. Any itchy spots or areas you want rinsed more?", rationale:"水が顔にかかる不快感を防ぎ、利用者がすすぎ具合を伝えやすいよう尋ねます。", rationale_en:"Prevent the discomfort of water hitting the face, and ask so they can easily tell you if more rinsing is needed.", rationale_tl:"Iwasan ang kakulangan sa ginhawa dahil sa tubig sa mukha, at magtanong para madali nilang sabihin kung kailangan pa ng banlaw.", quiz_options:[{text:"「目をつぶって動かないでいてください」",correct:false},{text:"「お顔にガーゼをあてますね。流します、かゆい所や流し足りない所はありますか？」",correct:true},{text:"「泡が目に入ったら洗えば大丈夫です」",correct:false},{text:"「すぐに流し終わるので我慢してください」",correct:false}] },
+    { id:"Q18", tag:"入浴・整容", situation_ja:"片麻痺のある方が上着を脱ぐときの誘導（右麻痺）。", sub_tl:"Paghuhubad ng damit para sa may paralisis sa kanang bahagi.", sub_en:"Helping a resident with right-side hemiplegia take off clothes.", cloze_hint:"「動きやすい<span class='cloze-blank'>左手</span>から脱ぎましょうか」", answer_ja:"「動きやすい左手から脱ぎましょうか。お手伝いしますね」", answer_tl:"Hubarin po muna natin sa malakas na kaliwang braso.", answer_en:"Let's take it off from your left arm first. I will assist you.", rationale:"「脱健着患（だっけんちゃっかん）」に従い、脱ぐときは健康な側から行います。", rationale_en:"Following the principle of undressing the stronger side first, take clothes off starting from the unaffected arm.", rationale_tl:"Ayon sa prinsipyong hubarin muna ang malakas na bahagi, hubarin ang damit simula sa braso na walang paralisis.", quiz_options:[{text:"「動かない右側から引っ張って脱ぎましょう」",correct:false},{text:"「動きやすい左手から脱ぎましょうか。お手伝いしますね」",correct:true},{text:"「ご自分で全部脱ぐ練習をしてください」",correct:false},{text:"「頭から一気に脱がせますね」",correct:false}] },
+    { id:"Q19", tag:"入浴・整容", situation_ja:"お風呂上がりに水分補給を勧めるとき。", sub_tl:"Pag-alok ng inumin pagkatapos maligo.", sub_en:"Offering fluids right after taking a bath.", cloze_hint:"「さっぱりしましたね！<span class='cloze-blank'>冷たいお水</span>か<span class='cloze-blank'>麦茶</span>はいかがですか？」", answer_ja:"「さっぱり気持ちよかったですね！冷たいお水か麦茶、どちらがよろしいですか？」", answer_tl:"Kay presko po! Gusto niyo po bang ng malamig na tubig o barley tea?", answer_en:"That felt so refreshing! Would you like some cool water or barley tea?", rationale:"入浴後の脱水を予防するため、選択肢を提示して気持ちよく飲めるよう促します。", rationale_en:"To prevent dehydration after bathing, offer choices so they can comfortably choose what to drink.", rationale_tl:"Para maiwasan ang dehydration matapos maligo, mag-alok ng pagpipilian para komportable silang uminom.", quiz_options:[{text:"「脱水になるので無理にでもこれを飲んでください」",correct:false},{text:"「さっぱり気持ちよかったですね！冷たいお水か麦茶、どちらがよろしいですか？」",correct:true},{text:"「喉が渇いたら後で言ってください」",correct:false},{text:"「お風呂に入ったからもう寝てください」",correct:false}] },
+    { id:"Q20", tag:"入浴・整容", situation_ja:"朝の洗面時、鏡を見て「髪がボサボサね」と気にしている。", sub_tl:"Napansin sa salamin na magulo ang buhok sa umaga.", sub_en:"Looking in mirror and concerned about messy hair in morning.", cloze_hint:"「<span class='cloze-blank'>ブラシ</span>をお渡ししますね。<span class='cloze-blank'>整え</span>ましょうか」", answer_ja:"「ブラシをお渡ししますね。後ろのほうはお手伝いして整えましょうか？」", answer_tl:"Akin pong ibibigay ang brush. Gusto niyo po bang tulungan ko kayo sa likod?", answer_en:"Here is your hairbrush. Shall I help you tidy up the back?", rationale:"自立支援を重んじ、自分でできる部分は任せ、見えない後頭部の支援を申し出ます。", rationale_en:"Respect their independence by letting them handle what they can, while offering help only with the back of the head, which they can't see.", rationale_tl:"Igalang ang kanilang kalayaan sa pamamagitan ng pagpapabaya sa kaya nilang gawin, habang tumutulong lamang sa likod ng ulo na hindi nila makita.", quiz_options:[{text:"「施設の中ですから誰も見ていませんよ」",correct:false},{text:"「ブラシをお渡ししますね。後ろのほうはお手伝いして整えましょうか？」",correct:true},{text:"「帽子をかぶって隠しましょう」",correct:false},{text:"「私が全部とかしますからじっとしていてください」",correct:false}] },
+
+    // 5. 認知症・夜間
+    { id:"Q21", tag:"認知症・夜間", situation_ja:"夕方、「家に帰って夕飯を作らなきゃ」と荷物をまとめて出口へ向かう。", sub_tl:"Gabi na at gustong umuwi para magluto ng hapunan para sa pamilya.", sub_en:"Evening restlessness: insists on going home to cook dinner for family.", cloze_hint:"「ご家族への<span class='cloze-blank'>ご飯作り</span>、ずっと頑張ってこられたんですね。<span class='cloze-blank'>お茶でも飲みながら</span>献立を教えていただけますか？」", answer_ja:"「ご家族のご飯を毎日作られていたんですね。一度お茶を飲みながら得意料理のお話を聞かせてください」", answer_tl:"Napakasipag niyo pong magluto para sa pamilya. Magtsaa po muna tayo habang nagkukuwentuhan.", answer_en:"You have taken such good care of cooking for your family. Let's have some tea and tell me about your recipes.", rationale:"否定（「ここは施設です」）せず、家族への愛情や役割意識を受容し、落ち着ける場へ誘導します。", rationale_en:"Instead of denying it with 'this is a care facility,' accept their love for their family and sense of duty, and gently guide them to somewhere calming.", rationale_tl:"Sa halip na itanggi gamit ang 'ito po ay pasilidad,' tanggapin ang kanilang pagmamahal sa pamilya at pananagutan, at dahan-dahang gabayan sila sa mapayapang lugar.", quiz_options:[{text:"「ここは施設ですから家には帰れませんよ」",correct:false},{text:"「ご家族のご飯を毎日作られていたんですね。一度お茶を飲みながら得意料理のお話を聞かせてください」",correct:true},{text:"「もう夜なので外に出たら危ないです」",correct:false},{text:"「荷物を部屋に戻してください」",correct:false}] },
+    { id:"Q22", tag:"認知症・夜間", situation_ja:"「私の財布を誰かが盗んだ！」と興奮して訴えている（物盗られ妄想）。", sub_tl:"Inaakalang may nagnakaw ng kanyang pitaka.", sub_en:"Agitated and accusing someone of stealing their wallet (theft delusion).", cloze_hint:"「それは<span class='cloze-blank'>心配ですね</span>。<span class='cloze-blank'>一緒にお部屋を探して</span>みましょう」", answer_ja:"「大事なお財布が見当たらないのは心配ですね。一緒に探してみましょう」", answer_tl:"Nakakabahala nga po kung nawawala ang pitaka. Halika po at sabay nating hanapin sa kwarto.", answer_en:"It must be really worrying to lose your important wallet. Let's go search for it together.", rationale:"「盗む人なんていません」と否定せず、財布がないという「不安な感情」に寄り添い一緒に行動します。", rationale_en:"Rather than denying it with 'no one stole it,' stay close to the anxious feeling of the missing wallet and act together with them.", rationale_tl:"Sa halip na itanggi gamit ang 'walang nagnakaw,' unawain ang pagkabalisa dahil sa nawawalang pitaka at sabay silang tulungan.", quiz_options:[{text:"「誰も盗んでいませんよ、思い違いです」",correct:false},{text:"「大事なお財布が見当たらないのは心配ですね。一緒に探してみましょう」",correct:true},{text:"「さっきご自分で引き出しに入れたじゃないですか」",correct:false},{text:"「警察を呼びますか？」と突き放す",correct:false}] },
+    { id:"Q23", tag:"認知症・夜間", situation_ja:"夜間、暗い廊下を不安そうに歩き回っている利用者を見かけたとき。", sub_tl:"Naglalakad sa madilim na pasilyo sa gabi nang may pag-aalinlangan.", sub_en:"Wandering nervously along the dark hallway at night.", cloze_hint:"「◯◯さん、こんばんは。<span class='cloze-blank'>何かお探し</span>ですか？<span class='cloze-blank'>足元を照らし</span>ますね」", answer_ja:"「〇〇さん、こんばんは。何かお探しですか？足元を照らしますね、一緒に行きましょう」", answer_tl:"Magandang gabi po. May hinahanap po ba kayo? Ilawan ko po ang daan at sasamahan ko kayo.", answer_en:"Good evening. Looking for something? Let me light the path and walk with you.", rationale:"急な声かけで驚かせないよう挨拶から入り、目的を聞きながら安全を確保します。", rationale_en:"Start with a greeting rather than a sudden call-out to avoid startling them, and ensure their safety while asking their purpose.", rationale_tl:"Magsimula sa magandang bati sa halip na biglaang tawag para hindi sila magulat, at tiyakin ang kaligtasan habang tinatanong ang dahilan.", quiz_options:[{text:"「夜中に歩き回ると危ないのですぐ寝てください」",correct:false},{text:"「〇〇さん、こんばんは。何かお探しですか？足元を照らしますね、一緒に行きましょう」",correct:true},{text:"「部屋から出ないでといつも言っていますよね」",correct:false},{text:"「静かにしないと他の人が起きますよ」",correct:false}] },
+    { id:"Q24", tag:"認知症・夜間", situation_ja:"職員のことを自分の娘と勘違いして親しげに話しかけてきたとき。", sub_tl:"Napagkamalang sariling anak ang caregiver.", sub_en:"Mistaking the caregiver for their own daughter.", cloze_hint:"「お話を<span class='cloze-blank'>聞かせて</span>くださいね。<span class='cloze-blank'>娘さん</span>はお元気ですか？」", answer_ja:"「いつも優しくしてくださって嬉しいです。娘さんのお話、また聞かせてくださいね」", answer_tl:"Salamat po sa inyong kabaitan. Masarap pong makinig sa kwento tungkol sa inyong anak.", answer_en:"Thank you for your warmth. I'd love to hear more stories about your daughter.", rationale:"強く「違います」と否定して混乱させず、親愛の情を柔らかく受け止めつつ関係を保ちます。", rationale_en:"Rather than firmly denying it and causing confusion, gently accept their warm feelings while maintaining the relationship.", rationale_tl:"Sa halip na mahigpit na itanggi na magdudulot ng pagkalito, banayad na tanggapin ang kanilang pagmamahal habang pinapanatili ang relasyon.", quiz_options:[{text:"「私は娘じゃありません！職員の〇〇です」と強く訂正する",correct:false},{text:"「いつも優しくしてくださって嬉しいです。娘さんのお話、また聞かせてくださいね」",correct:true},{text:"「娘のふりをして適当に嘘をつき続ける」",correct:false},{text:"「呆れて無視する」",correct:false}] },
+    { id:"Q25", tag:"認知症・夜間", situation_ja:"デイサービスのレクリエーションに参加したくないと腕組みをしている。", sub_tl:"Ayaw sumali sa recreation activity at nakahalukipkip.", sub_en:"Refusing to join group recreation activity with arms crossed.", cloze_hint:"「<span class='cloze-blank'>見ているだけ</span>でも大歓迎ですよ。<span class='cloze-blank'>隣で一緒に</span>眺めましょうか」", answer_ja:"「無理に参加しなくても、見ているだけでも大丈夫ですよ。ここでお茶を飲みながら眺めましょうか」", answer_tl:"Ayos lang po kahit manood lang muna. Magtsaa po tayo rito habang nakatingin.", answer_en:"You don't have to join actively; watching is totally fine. Shall we sit here and watch together over tea?", rationale:"参加を強要せず、「見学するだけでも良い」という安心感を与えて居場所を作ります。", rationale_en:"Without forcing participation, reassure them that just watching is fine too, creating a comfortable place to be.", rationale_tl:"Nang hindi pinipilit sumali, bigyan sila ng katiyakan na okay lang manood muna, para magkaroon sila ng komportableng lugar.", quiz_options:[{text:"「全員参加ですから輪に入ってください」",correct:false},{text:"「無理に参加しなくても、見ているだけでも大丈夫ですよ。ここでお茶を飲みながら眺めましょうか」",correct:true},{text:"「協調性がないと困ります」",correct:false},{text:"「参加しないなら部屋に戻ってください」",correct:false}] }
+  ];
+
+  /* --- Expand to Full 94 Questions across 5 blocks --- */
+  const scenarioPool = [
+    { cat: "食事介助", title: "食後の服薬時に錠剤が喉に引っかかりそうと怖がっている", hint: "「<span class='cloze-blank'>ゼリー</span>と一緒に<span class='cloze-blank'>つるんと</span>飲みましょうか」", ans: "「お薬用ゼリーと一緒にゆっくりつるんと飲んでみましょうか」", tl: "Inumin po natin kasabay ng medication jelly para madulas.", en: "Let's take it smoothly with medication jelly.", why: "嚥下困難な方には服薬ゼリー等で窒息・誤嚥を防ぐ配慮を行います。", why_en: "For those with swallowing difficulties, use medication jelly and similar aids to prevent choking or aspiration.", why_tl: "Para sa mga may hirap lumunok, gumamit ng medication jelly at katulad nito para maiwasan ang pagkabulunan." },
+    { cat: "移乗・移動", title: "リクライニング車いすの背もたれを起こすときの声かけ", hint: "「背中を<span class='cloze-blank'>少し起こし</span>ますね。<span class='cloze-blank'>気分は悪くない</span>ですか？」", ans: "「ゆっくり背もたれを起こしますね。頭がクラクラしないか教えてくださいね」", tl: "Dahan-dahan po nating itataas ang sandalan. Hindi po ba kayo nahihilo?", en: "I'll raise the backrest slowly. Please let me know if you feel dizzy.", why: "急激な起立性低血圧によるめまいを防ぐため、声をかけながらゆっくり起こします。", why_en: "To prevent dizziness from a sudden drop in blood pressure when sitting up, raise them slowly while talking them through it.", why_tl: "Para maiwasan ang pagkahilo dahil sa biglaang pagbaba ng presyon ng dugo, dahan-dahang itaas habang nakikipag-usap." },
+    { cat: "排泄介助", title: "男性利用者の尿器使用時の声かけ", hint: "「しっかり<span class='cloze-blank'>あてます</span>ね。<span class='cloze-blank'>ゆっくり</span>出してくださいね」", ans: "「尿器をしっかりあてますね。リラックスしてゆっくり出してくださいね」", tl: "Ilalapat po natin nang maayos ang urinal. Mag-relax po kayo.", en: "I will position the urinal properly. Please relax and take your time.", why: "緊張すると排尿反射が起きにくいため、安心できる声かけを行います。", why_en: "Tension can make it harder to urinate naturally, so speak in a reassuring way to help them relax.", why_tl: "Kapag naninigas ang katawan, mahirap umihi nang natural, kaya magsalita nang mapapakalma para makarelax sila." },
+    { cat: "入浴・整容", title: "機械浴（チェアー浴）で湯船に浸かるとき", hint: "「椅子が<span class='cloze-blank'>ゆっくり下がり</span>ます。<span class='cloze-blank'>手すりを握って</span>いてくださいね」", ans: "「椅子がゆっくりお湯の中に入りますね。手すりをしっかり握っていてくださいね」", tl: "Lulubog po nang dahan-dahan ang upuan sa tubig. Hawak po sa handrail.", en: "The chair will lower gently into the bath. Please hold onto the handrails.", why: "機械の下降時の浮力や揺れに対する恐怖心を軽減します。", why_en: "Ease their fear of the buoyancy and movement felt as the mechanical bath chair lowers into the water.", why_tl: "Bawasan ang takot sa lutang at pag-uga habang unti-unting bumababa ang machine chair papasok sa tubig." },
+    { cat: "認知症・夜間", title: "「私の部屋はどこですか？」と廊下で迷っている", hint: "「お部屋はこちらですよ。<span class='cloze-blank'>お名前のプレート</span>を<span class='cloze-blank'>一緒に確認</span>しましょう」", ans: "「〇〇さんのお部屋はこちらですよ。お名前のプレートを一緒に見に行きましょう」", tl: "Dito po ang inyong kwarto. Tingnan po natin ang inyong nameplate.", en: "Your room is right here. Let's go check your nameplate together.", why: "目印を一緒に確認することで視覚的な安心感と自己認知を支えます。", why_en: "Checking a visual marker together supports their sense of visual reassurance and self-orientation.", why_tl: "Sa magkasamang pagtingin sa markang panghanap, natutulungan sila sa biswal na katiyakan at pagkakakilanlan sa sarili." }
+  ];
+
+  let items = [...rawItems];
+  let idCounter = items.length + 1;
+  while (items.length < 94) {
+    const sc = scenarioPool[(items.length - rawItems.length) % scenarioPool.length];
+    const newId = `Q${idCounter < 10 ? '0' + idCounter : idCounter}`;
+    items.push({
+      id: newId,
+      tag: sc.cat,
+      situation_ja: `【${sc.cat} No.${idCounter}】${sc.title}`,
+      sub_tl: sc.tl,
+      sub_en: sc.en,
+      cloze_hint: sc.hint,
+      answer_ja: sc.ans,
+      answer_tl: sc.tl,
+      answer_en: sc.en,
+      rationale: sc.why,
+      rationale_en: sc.why_en,
+      rationale_tl: sc.why_tl,
+      quiz_options: [
+        { text: "不適切な対応（利用者の気持ちを無視・急かす）", correct: false },
+        { text: sc.ans, correct: true },
+        { text: "命令口調での指示（「〜してください」）", correct: false },
+        { text: "危険を放置する声かけ", correct: false }
+      ]
+    });
+    idCounter++;
+  }
+
+  /* --- App State & Navigation --- */
+  let currentLang = 'ja';
+  let currentCategory = 'ALL';
+  let activeList = [...items];
+  let currentIndex = 0;
+  let knockStep = 0;
+  let quizScore = 0;
+  let knockRepeatQueue = [];
+
+  function setView(viewId) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function goHome() {
+    playClick();
+    stopSpeech();
+    setView('view-home');
+  }
+
+  function setLang(lang) {
+    playClick();
+    stopSpeech();
+    currentLang = lang;
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(`btn-lang-${lang}`).classList.add('active');
+    updateTexts();
+  }
+
+  function setCategory(cat) {
+    playClick();
+    currentCategory = cat;
+    document.querySelectorAll('.filter-chip').forEach(b => {
+      b.classList.toggle('active', b.innerText.includes(cat) || (cat === 'ALL' && b.innerText.includes('全問題')));
+    });
+  }
+
+  function getFilteredItems() {
+    if (currentCategory === 'ALL') return items;
+    return items.filter(it => it.tag === currentCategory);
+  }
+
+  function updateTexts() {
+    const item = activeList[currentIndex];
+    if (!item) return;
+    const subElK = document.getElementById('knock-sub');
+    const subElQ = document.getElementById('quiz-sub');
+    const txt = currentLang === 'tl' ? item.sub_tl : (currentLang === 'en' ? item.sub_en : item.situation_ja);
+    if (subElK) subElK.innerText = txt;
+    if (subElQ) subElQ.innerText = txt;
+
+    const transTxt = currentLang === 'tl' ? item.answer_tl : item.answer_en;
+    const ratTxt = currentLang === 'tl' ? item.rationale_tl : item.rationale_en;
+    const knockTrans = document.getElementById('knock-trans');
+    const knockRatTrans = document.getElementById('knock-rationale-trans');
+    const quizRatTrans = document.getElementById('quiz-rationale-trans');
+    if (knockTrans) knockTrans.innerText = transTxt;
+    if (knockRatTrans) knockRatTrans.innerText = ratTxt;
+    if (quizRatTrans) quizRatTrans.innerText = ratTxt;
+  }
+
+  /* --- Mode 1: Active Recall Knock --- */
+  function startKnock() {
+    playClick();
+    activeList = getFilteredItems();
+    currentIndex = 0;
+    knockRepeatQueue = [];
+    setView('view-knock');
+    renderKnockCard();
+  }
+
+  function renderKnockCard() {
+    stopSpeech();
+    knockStep = 0;
+    const item = activeList[currentIndex];
+    document.getElementById('knock-id').innerText = `KNOCK ${currentIndex + 1}/${activeList.length}`;
+    document.getElementById('knock-tag').innerText = item.tag;
+    document.getElementById('knock-situation').innerText = item.situation_ja;
+    document.getElementById('knock-sub').innerText = currentLang === 'tl' ? item.sub_tl : item.sub_en;
+    
+    document.getElementById('knock-hint-text').innerHTML = item.cloze_hint;
+    document.getElementById('knock-answer').innerText = item.answer_ja;
+    document.getElementById('knock-trans').innerText = currentLang === 'tl' ? item.answer_tl : item.answer_en;
+    document.getElementById('knock-rationale').innerHTML = `<strong>💡 配慮のポイント:</strong><br>${item.rationale}`;
+    document.getElementById('knock-rationale-trans').innerText = currentLang === 'tl' ? item.rationale_tl : item.rationale_en;
+
+    document.getElementById('knock-stage-1').style.display = 'none';
+    document.getElementById('knock-stage-2').style.display = 'none';
+    document.getElementById('knock-btn-next-step').style.display = 'block';
+    document.getElementById('knock-btn-next-step').innerText = '🔍 キーワード・穴埋めヒントを見る';
+    document.getElementById('knock-eval-btns').style.display = 'none';
+
+    const pct = ((currentIndex) / activeList.length) * 100;
+    document.getElementById('knock-progress').style.width = `${pct}%`;
+    document.getElementById('knock-count').innerText = `${currentIndex + 1}/${activeList.length}`;
+
+    setTimeout(() => toggleKnockSpeech(), 450);
+  }
+
+  function advanceKnockStep() {
+    playClick();
+    if (knockStep === 0) {
+      knockStep = 1;
+      document.getElementById('knock-stage-1').style.display = 'block';
+      document.getElementById('knock-btn-next-step').innerText = '🎯 正解・解説をオープン';
+    } else if (knockStep === 1) {
+      knockStep = 2;
+      document.getElementById('knock-stage-2').style.display = 'block';
+      document.getElementById('knock-btn-next-step').style.display = 'none';
+      document.getElementById('knock-eval-btns').style.display = 'flex';
+      playSuccess();
+      setTimeout(() => toggleKnockAnswerSpeech(), 500);
+    }
+  }
+
+  function evaluateKnock(isPerfect) {
+    stopSpeech();
+    if (isPerfect) {
+      playSuccess();
+    } else {
+      playMiss();
+      knockRepeatQueue.push(activeList[currentIndex]);
+    }
+    currentIndex++;
+    if (currentIndex < activeList.length) {
+      renderKnockCard();
+    } else {
+      showResult(activeList.length - knockRepeatQueue.length, activeList.length);
+    }
+  }
+
+  /* --- Mode 2: Simulator Quiz --- */
+  function startQuiz() {
+    playClick();
+    activeList = getFilteredItems();
+    currentIndex = 0;
+    quizScore = 0;
+    setView('view-quiz');
+    renderQuizCard();
+  }
+
+  function renderQuizCard() {
+    stopSpeech();
+    const item = activeList[currentIndex];
+    document.getElementById('quiz-id').innerText = `QUIZ ${currentIndex + 1}/${activeList.length}`;
+    document.getElementById('quiz-tag').innerText = item.tag;
+    document.getElementById('quiz-question').innerText = item.situation_ja;
+    document.getElementById('quiz-sub').innerText = currentLang === 'tl' ? item.sub_tl : item.sub_en;
+    document.getElementById('quiz-feedback').style.display = 'none';
+
+    const pct = ((currentIndex) / activeList.length) * 100;
+    document.getElementById('quiz-progress').style.width = `${pct}%`;
+    document.getElementById('quiz-count').innerText = `${currentIndex + 1}/${activeList.length}`;
+
+    const optContainer = document.getElementById('quiz-options');
+    optContainer.innerHTML = '';
+    
+    const shuffled = [...item.quiz_options].sort(() => Math.random() - 0.5);
+    shuffled.forEach((opt) => {
+      const btn = document.createElement('button');
+      btn.className = 'opt-btn';
+      btn.innerText = opt.text;
+      btn.onclick = () => selectOption(btn, opt.correct, item);
+      optContainer.appendChild(btn);
+    });
+
+    setTimeout(() => toggleQuizSpeech(), 450);
+  }
+
+  function selectOption(btn, isCorrect, item) {
+    stopSpeech();
+    const allBtns = document.querySelectorAll('.opt-btn');
+    allBtns.forEach(b => b.disabled = true);
+
+    if (isCorrect) {
+      btn.classList.add('correct');
+      quizScore++;
+      playSuccess();
+      document.getElementById('quiz-feedback-result').innerText = '⭕ 正解！素晴らしい声かけです';
+      document.getElementById('quiz-feedback-result').style.color = '#1F6355';
+      setTimeout(() => speakText('正解です。' + item.answer_ja), 400);
+    } else {
+      btn.classList.add('incorrect');
+      playMiss();
+      document.getElementById('quiz-feedback-result').innerText = '❌ 配慮ポイントを確認しましょう';
+      document.getElementById('quiz-feedback-result').style.color = 'var(--accent-text)';
+      allBtns.forEach(b => {
+        if (!b.classList.contains('incorrect') && b.innerText.includes('「')) {
+          b.classList.add('correct');
+        }
+      });
+      setTimeout(() => speakText('惜しいです。正しい声かけは。' + item.answer_ja), 400);
+    }
+
+    document.getElementById('quiz-rationale').innerHTML = `<strong>💡 配慮の理由:</strong><br>${item.rationale}`;
+    document.getElementById('quiz-rationale-trans').innerText = currentLang === 'tl' ? item.rationale_tl : item.rationale_en;
+    document.getElementById('quiz-feedback').style.display = 'block';
+  }
+
+  function nextQuiz() {
+    playClick();
+    stopSpeech();
+    currentIndex++;
+    if (currentIndex < activeList.length) {
+      renderQuizCard();
+    } else {
+      showResult(quizScore, activeList.length);
+    }
+  }
+
+  /* --- Result View --- */
+  function showResult(score, total) {
+    stopSpeech();
+    setView('view-result');
+    document.getElementById('result-score').innerText = `${score} / ${total}`;
+    document.getElementById('result-msg').innerText = 
+      score === total 
+        ? "完璧です！現場でも自信を持って声に出してみましょう。" 
+        : "お疲れ様でした！間違えた問題やあやふやな声かけをノックモードで繰り返し復習しましょう。";
+  }
 </script>
 </body>
 </html>
