@@ -253,31 +253,37 @@
   function playDanger(){ playTone(220, 0.28, 'triangle'); }      // DANGEROUS_UNSAFE（missより低く長め）
 
   // ============================================================
-  // オフライン判定エンジン（キーワード/語尾マッチング）
+  // オフライン判定エンジン（語尾マッチング + 2文字バイグラム一致率）
   var POLITE_ENDINGS = ['ましょうか','ませんか','ください','いただけますか','でしょうか','ますね','ますよ','ますか','です','ます'];
   var ROUGH_MARKERS  = ['だろ','しろ','やれ','くれ','行け','来い','早くしろ','うるさい','黙れ'];
+  // 丁寧な形をした行動制限・スピーチロック表現。POLITE_ENDINGSを満たしても
+  // これらが含まれる場合は無条件でDANGEROUS_UNSAFE扱いにする。
+  var SPEECH_LOCK_MARKERS = ['待って','動かないで','立たないで','座ってて','座っていて','ダメ','やめて','触らないで','勝手に'];
 
   function normalize(str){ return (str || '').replace(/[\s、。！？!?～〜]/g, ''); }
 
-  function extractKeywords(target){
-    return normalize(target)
-      .replace(/(ましょうか|ませんか|ください|いただけますか|でしょうか|ますね|ますよ|ますか|です|ます|を|に|が|は|で|と)/g, '')
-      .split('').filter(Boolean);
+  function getBigrams(str){
+    var s = normalize(str);
+    var grams = [];
+    for (var i = 0; i < s.length - 1; i++) grams.push(s.slice(i, i + 2));
+    return grams;
   }
 
   function offlineJudge(input, target){
     var norm = normalize(input);
     if (!norm) return 'DANGEROUS_UNSAFE';
     if (ROUGH_MARKERS.some(function(m){ return norm.indexOf(m) !== -1; })) return 'DANGEROUS_UNSAFE';
+    if (SPEECH_LOCK_MARKERS.some(function(w){ return norm.indexOf(w) !== -1; })) return 'DANGEROUS_UNSAFE';
 
     var isPolite = POLITE_ENDINGS.some(function(e){ return norm.slice(-e.length) === e; });
-    var targetChars = extractKeywords(target);
-    var overlap = targetChars.length
-      ? targetChars.filter(function(c){ return norm.indexOf(c) !== -1; }).length / targetChars.length
-      : 0;
 
-    if (isPolite && overlap >= 0.35) return 'PERFECT';
-    if (overlap >= 0.2) return 'CASUAL_WARNING';
+    // 文字単位ではなく2文字バイグラムで見ることで、語順・文脈の再現度を評価する
+    var targetGrams = getBigrams(target);
+    var matchCount = targetGrams.filter(function(g){ return norm.indexOf(g) !== -1; }).length;
+    var overlap = targetGrams.length ? (matchCount / targetGrams.length) : 0;
+
+    if (isPolite && overlap >= 0.3) return 'PERFECT';
+    if (overlap >= 0.15) return 'CASUAL_WARNING';
     return 'DANGEROUS_UNSAFE';
   }
 
