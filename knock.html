@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#D9637A">
+<title>1000本ノック | 声かけマスター</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#2B2926;
+    --cream:#EFEAE0;
+    --cream-deep:#E4DECE;
+    --stone:#C9C2B4;
+    --stone-line:#DDD6C6;
+    --accent-fill:#D9637A;
+    --accent-text:#B23F58;
+    --accent-correct:#2E8B76;
+    --accent-correct-text:#1F6355;
+    --warn-fill:#C97A3D;
+    --warn-text:#8A4E1F;
+    --warn-bg:#F5E9DC;
+    --correct-bg:#E8F5F1;
+    --danger-bg:#FDEDEE;
+    --font-mincho:'Shippori Mincho', serif;
+    --font-gothic:'Zen Kaku Gothic New', sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{
+    background-color:var(--cream);color:var(--ink);
+    font-family:var(--font-gothic);line-height:1.6;
+    display:flex;justify-content:center;min-height:100vh;
+  }
+  .app{width:100%;max-width:520px;padding:16px;display:flex;flex-direction:column;gap:18px;min-height:100vh;}
+
+  header{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding-bottom:12px;border-bottom:1px solid var(--stone-line);
+  }
+  .back{
+    font-size:0.78rem;color:var(--ink);text-decoration:none;
+    border:1px solid var(--stone-line);padding:6px 12px;border-radius:20px;background:#fff;
+  }
+  .back:hover{border-color:var(--accent-fill);color:var(--accent-text);}
+  .stats{display:flex;gap:8px;font-size:0.78rem;}
+  .stat{
+    background:#fff;border:1px solid var(--stone-line);border-radius:20px;
+    padding:6px 12px;font-weight:700;color:var(--accent-text);white-space:nowrap;
+  }
+
+  .card{
+    background:#fff;border:1px solid var(--stone-line);border-radius:12px;
+    padding:20px 18px;display:flex;flex-direction:column;gap:16px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.03);
+  }
+
+  .card-tag{
+    align-self:flex-start;font-size:0.75rem;font-weight:700;color:var(--accent-text);
+    border:1px solid var(--stone-line);background:var(--cream);padding:2px 10px;border-radius:4px;
+  }
+
+  .situation{font-family:var(--font-mincho);font-size:1.12rem;font-weight:700;line-height:1.7;color:var(--ink);}
+
+  .target-hint{background:var(--cream-deep);border-radius:8px;padding:14px 16px;}
+  .target-hint .hint-label{display:block;font-size:0.75rem;color:var(--accent-text);font-weight:700;margin-bottom:4px;}
+  .target-hint p{font-family:var(--font-mincho);font-size:0.98rem;line-height:1.6;color:var(--ink);}
+
+  .judge-banner{border-radius:8px;padding:12px 16px;font-weight:700;font-size:0.95rem;text-align:center;}
+  .judge-banner.perfect{background:var(--correct-bg);color:var(--accent-correct-text);}
+  .judge-banner.warning{background:var(--warn-bg);color:var(--warn-text);}
+  .judge-banner.danger{background:var(--danger-bg);color:var(--accent-text);}
+
+  .input-row{display:flex;gap:8px;}
+  #textInput{
+    flex:1;min-width:0;font-size:16px;font-family:var(--font-gothic);
+    padding:12px 14px;border-radius:8px;border:1.5px solid var(--stone-line);
+    background:var(--cream);color:var(--ink);
+  }
+  #textInput:focus{outline:none;border-color:var(--accent-fill);}
+
+  .mic-btn,.submit-btn,.skip-btn{font-family:var(--font-gothic);font-weight:700;border:none;cursor:pointer;border-radius:8px;transition:transform .12s ease,opacity .12s ease;}
+  .mic-btn{width:46px;height:46px;flex:0 0 auto;font-size:19px;background:#fff;border:1.5px solid var(--stone-line);color:var(--accent-text);}
+  .mic-btn.listening{background:var(--accent-fill);color:#fff;border-color:var(--accent-fill);animation:pulse 1s infinite;}
+  .mic-btn:disabled{opacity:.4;cursor:not-allowed;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(217,99,122,.5);}50%{box-shadow:0 0 0 8px rgba(217,99,122,0);}}
+
+  .submit-btn{flex:0 0 auto;padding:0 18px;font-size:0.9rem;background:var(--accent-fill);color:var(--cream);}
+  .submit-btn:disabled{opacity:.6;cursor:not-allowed;}
+  .submit-btn:active{transform:scale(.97);}
+
+  .skip-btn{align-self:center;background:none;color:#666;font-size:0.78rem;padding:8px 4px;text-decoration:underline;text-underline-offset:3px;}
+
+  footer{margin-top:auto;padding-top:20px;text-align:center;font-size:0.75rem;color:var(--stone);}
+
+  @media (max-width:400px){.card{padding:16px 14px;}.situation{font-size:1.02rem;}}
+  @media (prefers-reduced-motion:reduce){.mic-btn.listening{animation:none;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <a class="back" href="./index.html">← 声かけマスターへ戻る</a>
+    <div class="stats">
+      <span class="stat" id="streakCount">🔥0</span>
+      <span class="stat" id="scoreCount">合計 0本</span>
+    </div>
+  </header>
+
+  <main class="card">
+    <span class="card-tag" id="categoryBadge">場面</span>
+    <p class="situation" id="situationText"></p>
+
+    <div class="target-hint" id="targetHint" hidden>
+      <span class="hint-label">お手本の声かけ</span>
+      <p id="targetPhrase"></p>
+    </div>
+
+    <div class="judge-banner" id="judgeBanner" hidden></div>
+
+    <div class="input-row">
+      <input type="text" id="textInput" placeholder="声かけを入力、またはマイクで発話" autocomplete="off" inputmode="text">
+      <button id="micBtn" class="mic-btn" aria-label="音声入力を開始">🎤</button>
+      <button id="submitBtn" class="submit-btn">判定</button>
+    </div>
+
+    <button id="skipBtn" class="skip-btn">この場面をスキップして次へ ▶</button>
+  </main>
+
+  <footer>© Yoshida EdTech Works</footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ============================================================
+  // 設定
+  // ------------------------------------------------------------
+  // Jev(TypeSafe AI)へは、APIキーをこのファイルに直書きしないこと。
+  // 呼び出しは必ずサーバレスプロキシ（Vercel Functions等）を経由させる。
+  // 空文字のままならオフライン判定のみで動作する（学習を止めないための既定値）。
+  var JEV_PROXY_ENDPOINT = ""; // 例: "/api/jev-classify"
+  var JEV_TIMEOUT_MS = 3000;
+  var NEXT_DELAY_MS = 700; // PERFECT正解から次問までの遷移時間（0.8秒以内）
+
+  // ============================================================
+  // 場面データの受け取り
+  // 1問目: URLクエリパラメータ / 2問目以降: sessionStorageのプール
+  var params = new URLSearchParams(location.search);
+  var initialScene = {
+    category: params.get('category') || '基本のあいさつ',
+    situation: params.get('situation') || '声かけマスターの場面カードから「⚡️1000本ノック」を押して開始してください。',
+    target: params.get('target') || ''
+  };
+
+  var pool = [];
+  try {
+    var stored = sessionStorage.getItem('gabayKnockPool');
+    if (stored) pool = JSON.parse(stored);
+  } catch (e) {
+    pool = [];
+  }
+
+  if (!Array.isArray(pool) || pool.length === 0) {
+    // 単体起動テスト用のサンプル（本番では声かけマスターの94問プールに置き換わる）
+    pool = [
+      { category: '食事介助', situation: '昼食の配膳が終わりました。', target: 'お待たせしました。温かいうちにどうぞ召し上がってください。' },
+      { category: '移乗・移動', situation: '車椅子からベッドへ移る場面です。', target: 'ゆっくりで大丈夫ですよ。私がしっかり支えますね。' },
+      { category: '排泄介助', situation: 'トイレへ誘導する場面です。', target: 'お手洗いに行きましょうか。焦らなくて大丈夫ですよ。' },
+      { category: '認知症・夜間', situation: '夜間、不安そうに廊下を歩いています。', target: '何かお探しですか？足元を照らしますね、一緒に行きましょう。' }
+    ];
+  }
+
+  function shuffle(arr){
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  var queue = [initialScene].concat(shuffle(pool));
+  var qIndex = 0;
+  var current = queue[0];
+
+  // ============================================================
+  var score = 0;
+  var streak = 0;
+  var recognizing = false;
+
+  var el = {
+    category:   document.getElementById('categoryBadge'),
+    situation:  document.getElementById('situationText'),
+    hint:       document.getElementById('targetHint'),
+    hintPhrase: document.getElementById('targetPhrase'),
+    banner:     document.getElementById('judgeBanner'),
+    input:      document.getElementById('textInput'),
+    mic:        document.getElementById('micBtn'),
+    submit:     document.getElementById('submitBtn'),
+    skip:       document.getElementById('skipBtn'),
+    streakCount:document.getElementById('streakCount'),
+    scoreCount: document.getElementById('scoreCount')
+  };
+
+  function renderScene(){
+    current = queue[qIndex];
+    el.category.textContent = current.category;
+    el.situation.textContent = current.situation;
+    el.hint.hidden = true;
+    el.banner.hidden = true;
+    el.input.value = '';
+    el.input.focus();
+  }
+
+  function renderStats(){
+    el.streakCount.textContent = '\ud83d\udd25' + streak;
+    el.scoreCount.textContent = '合計 ' + score + '本';
+  }
+
+  function nextScene(){
+    qIndex++;
+    if (qIndex >= queue.length){
+      queue = queue.concat(shuffle(pool)); // 1000本ノックなので出題を尽きさせない
+    }
+    renderScene();
+  }
+
+  // ============================================================
+  // 437Hz Tone Engine（声かけマスター本体と同じブランド音エンジンをそのまま踏襲）
+  var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  function playTone(freq, duration, type){
+    freq = freq || 437; duration = duration || 0.08; type = type || 'sine';
+    try {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch(e){}
+  }
+  function playSuccess(){ playTone(437, 0.1); setTimeout(function(){ playTone(655.5, 0.15); }, 90); }
+  function playClick(){ playTone(437, 0.04); }
+  function playMiss(){ playTone(300, 0.18, 'triangle'); }       // CASUAL_WARNING
+  function playDanger(){ playTone(220, 0.28, 'triangle'); }      // DANGEROUS_UNSAFE（missより低く長め）
+
+  // ============================================================
+  // オフライン判定エンジン（キーワード/語尾マッチング）
+  var POLITE_ENDINGS = ['ましょうか','ませんか','ください','いただけますか','でしょうか','ますね','ますよ','ますか','です','ます'];
+  var ROUGH_MARKERS  = ['だろ','しろ','やれ','くれ','行け','来い','早くしろ','うるさい','黙れ'];
+
+  function normalize(str){ return (str || '').replace(/[\s、。！？!?～〜]/g, ''); }
+
+  function extractKeywords(target){
+    return normalize(target)
+      .replace(/(ましょうか|ませんか|ください|いただけますか|でしょうか|ますね|ますよ|ますか|です|ます|を|に|が|は|で|と)/g, '')
+      .split('').filter(Boolean);
+  }
+
+  function offlineJudge(input, target){
+    var norm = normalize(input);
+    if (!norm) return 'DANGEROUS_UNSAFE';
+    if (ROUGH_MARKERS.some(function(m){ return norm.indexOf(m) !== -1; })) return 'DANGEROUS_UNSAFE';
+
+    var isPolite = POLITE_ENDINGS.some(function(e){ return norm.slice(-e.length) === e; });
+    var targetChars = extractKeywords(target);
+    var overlap = targetChars.length
+      ? targetChars.filter(function(c){ return norm.indexOf(c) !== -1; }).length / targetChars.length
+      : 0;
+
+    if (isPolite && overlap >= 0.35) return 'PERFECT';
+    if (overlap >= 0.2) return 'CASUAL_WARNING';
+    return 'DANGEROUS_UNSAFE';
+  }
+
+  // ============================================================
+  // Jev API 呼び出し（タイムアウト/失敗時は即オフラインへフォールバック）
+  function classify(input, target, category){
+    if (!JEV_PROXY_ENDPOINT) return Promise.resolve(offlineJudge(input, target));
+
+    var controller = new AbortController();
+    var timer = setTimeout(function(){ controller.abort(); }, JEV_TIMEOUT_MS);
+
+    return fetch(JEV_PROXY_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input: input, target: target, category: category }),
+      signal: controller.signal
+    })
+    .then(function(res){
+      clearTimeout(timer);
+      if (!res.ok) throw new Error('jev-http-error');
+      return res.json();
+    })
+    .then(function(data){
+      var valid = ['PERFECT','CASUAL_WARNING','DANGEROUS_UNSAFE'];
+      if (!data || valid.indexOf(data.label) === -1) throw new Error('jev-bad-label');
+      return data.label;
+    })
+    .catch(function(){
+      clearTimeout(timer);
+      return offlineJudge(input, target);
+    });
+  }
+
+  // ============================================================
+  function showBanner(label){
+    el.banner.hidden = false;
+    el.banner.className = 'judge-banner';
+    if (label === 'PERFECT'){
+      el.banner.classList.add('perfect');
+      el.banner.textContent = '◎ PERFECT！';
+    } else if (label === 'CASUAL_WARNING'){
+      el.banner.classList.add('warning');
+      el.banner.textContent = '△ 敬語・言い回しを見直しましょう';
+      el.hint.hidden = false;
+      el.hintPhrase.textContent = current.target || '（この場面のお手本は未設定です）';
+    } else {
+      el.banner.classList.add('danger');
+      el.banner.textContent = '✕ 声かけとして不適切です';
+      el.hint.hidden = false;
+      el.hintPhrase.textContent = current.target || '（この場面のお手本は未設定です）';
+    }
+  }
+
+  function handleSubmit(){
+    var input = el.input.value.trim();
+    if (!input) return;
+    el.submit.disabled = true;
+
+    classify(input, current.target, current.category).then(function(label){
+      if (label === 'PERFECT'){
+        score++; streak++;
+        renderStats();
+        playSuccess();
+        showBanner('PERFECT');
+        setTimeout(function(){
+          el.submit.disabled = false;
+          nextScene();
+          if (recognizing) startRecognitionSafely();
+        }, NEXT_DELAY_MS);
+      } else {
+        streak = 0;
+        renderStats();
+        if (label === 'CASUAL_WARNING') playMiss(); else playDanger();
+        showBanner(label);
+        el.submit.disabled = false;
+        el.input.select();
+      }
+    });
+  }
+
+  // ============================================================
+  // Web Speech API（発話終了後ノータイムで判定へ送信）
+  var recognizer = null;
+  var SpeechRecognitionImpl = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  function initRecognizer(){
+    if (!SpeechRecognitionImpl) return null;
+    var r = new SpeechRecognitionImpl();
+    r.lang = 'ja-JP';
+    r.continuous = false;
+    r.interimResults = false;
+    r.maxAlternatives = 1;
+    r.onresult = function(ev){
+      el.input.value = ev.results[0][0].transcript;
+      handleSubmit();
+    };
+    r.onerror = function(){ el.mic.classList.remove('listening'); };
+    r.onend = function(){ el.mic.classList.remove('listening'); };
+    return r;
+  }
+
+  function startRecognitionSafely(){
+    if (!recognizer) recognizer = initRecognizer();
+    if (!recognizer) return;
+    try { el.mic.classList.add('listening'); recognizer.start(); } catch (e) {}
+  }
+
+  if (!SpeechRecognitionImpl){
+    el.mic.disabled = true;
+    el.mic.title = 'このブラウザは音声入力に対応していません（手入力をご利用ください）';
+  } else {
+    el.mic.addEventListener('click', function(){
+      recognizing = true;
+      startRecognitionSafely();
+    });
+  }
+
+  // ============================================================
+  el.submit.addEventListener('click', handleSubmit);
+  el.input.addEventListener('keydown', function(e){ if (e.key === 'Enter') handleSubmit(); });
+  el.skip.addEventListener('click', function(){ streak = 0; renderStats(); nextScene(); });
+
+  renderStats();
+  renderScene();
+})();
+</script>
+</body>
+</html>
