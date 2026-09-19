@@ -418,6 +418,23 @@
       color: var(--accent-text) !important;
     }
 
+    /* 1000-Knock Launch Button */
+    .btn-knock-launch {
+      background: transparent;
+      border: 1.5px solid var(--accent-fill);
+      color: var(--accent-text);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-family: var(--font-gothic);
+      white-space: nowrap;
+    }
+    .btn-knock-launch:hover, .btn-knock-launch:active {
+      background: var(--cream-deep);
+    }
+
     /* Results */
     .result-box {
       text-align: center;
@@ -508,7 +525,10 @@
     <div class="card">
       <div class="card-meta">
         <div class="card-tag" id="knock-tag">食事介助</div>
-        <div class="card-id" id="knock-id">KNOCK 01</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div class="card-id" id="knock-id">KNOCK 01</div>
+          <button class="btn-knock-launch" onclick="launchKnock1000(activeList[currentIndex])">⚡️1000本ノック</button>
+        </div>
       </div>
       <div class="situation-title" id="knock-situation">状況テキスト</div>
       <div class="situation-sub" id="knock-sub">Subtext in TL/EN</div>
@@ -550,7 +570,10 @@
     <div class="card">
       <div class="card-meta">
         <div class="card-tag" id="quiz-tag">移乗・移動</div>
-        <div class="card-id" id="quiz-id">QUIZ 01</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div class="card-id" id="quiz-id">QUIZ 01</div>
+          <button class="btn-knock-launch" onclick="launchKnock1000(activeList[currentIndex])">⚡️1000本ノック</button>
+        </div>
       </div>
       <div class="situation-title" id="quiz-question">問題文</div>
       <div class="situation-sub" id="quiz-sub">Subtext in TL/EN</div>
@@ -752,6 +775,30 @@
   let knockRepeatQueue = [];
   let currentMode = null; // 'knock' | 'quiz'
   const STORAGE_KEY = 'koekake_progress_v1';
+
+  /* --- 1000本ノック連携 --- */
+  function launchKnock1000(item) {
+    if (!item) return;
+    playClick();
+    try {
+      // itemsは既存の94問データ配列。knock.html用の形式に変換して丸ごと渡す
+      const knockPool = items.map(it => ({
+        category: it.tag,
+        situation: it.situation_ja,
+        target: it.answer_ja
+      }));
+      sessionStorage.setItem('gabayKnockPool', JSON.stringify(knockPool));
+    } catch (e) {
+      // ストレージが使えない環境でもURLパラメータのみで動作継続
+    }
+
+    const params = new URLSearchParams({
+      category: item.tag,
+      situation: item.situation_ja,
+      target: item.answer_ja
+    });
+    location.href = `./knock.html?${params.toString()}`;
+  }
 
   /* --- Resume Progress (localStorage) --- */
   function saveProgress() {
